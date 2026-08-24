@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão de Produtos - Ficha Técnica, Precificação e DRE</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  header {
+    background: #2c3e50;
+    color: #fff;
+    padding: 25px 30px;
+  }
+  header h1 { font-size: 1.8em; margin-bottom: 5px; }
+  header p { opacity: 0.8; font-size: 0.95em; }
+  .tabs {
+    display: flex;
+    background: #34495e;
+  }
+  .tab {
+    flex: 1;
+    padding: 15px;
+    text-align: center;
+    color: #bdc3c7;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+  }
+  .tab:hover { background: #3d566e; color: #fff; }
+  .tab.active {
+    background: #fff;
+    color: #2c3e50;
+    border-bottom-color: #e67e22;
+  }
+  .content { padding: 30px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  h2 { color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+  h3 { color: #34495e; margin: 15px 0 10px; font-size: 1.1em; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  label { display: block; font-size: 0.85em; color: #555; margin-bottom: 5px; font-weight: 600; }
+  input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: border 0.2s;
+  }
+  input:focus, select:focus { outline: none; border-color: #667eea; }
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 0.95em;
+  }
+  .btn-primary { background: #667eea; color: #fff; }
+  .btn-primary:hover { background: #5568d3; }
+  .btn-success { background: #27ae60; color: #fff; }
+  .btn-success:hover { background: #229954; }
+  .btn-danger { background: #e74c3c; color: #fff; padding: 6px 12px; font-size: 0.85em; }
+  .btn-danger:hover { background: #c0392b; }
+  .btn-secondary { background: #95a5a6; color: #fff; }
+  .btn-secondary:hover { background: #7f8c8d; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: #fff;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #ecf0f1;
+    font-size: 0.9em;
+  }
+  th { background: #34495e; color: #fff; font-weight: 600; }
+  tr:hover { background: #f8f9fa; }
+  .card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+  }
+  .summary-item {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ecf0f1;
+  }
+  .summary-item .label { font-size: 0.8em; color: #7f8c8d; text-transform: uppercase; }
+  .summary-item .value { font-size: 1.4em; font-weight: 700; color: #2c3e50; margin-top: 5px; }
+  .value.positive { color: #27ae60; }
+  .value.negative { color: #e74c3c; }
+  .insumo-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: end;
+  }
+  .dre-table th { background: #2c3e50; }
+  .dre-table .total-row { background: #ecf0f1; font-weight: 700; }
+  .dre-table .lucro-row { background: #d5f5e3; font-weight: 700; }
+  .dre-table .prejuizo-row { background: #fadbd8; font-weight: 700; }
+  .actions { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+  .alert {
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+  }
+  .alert-info { background: #d6eaf8; color: #1b4f72; border-left: 4px solid #3498db; }
+  .alert-warning { background: #fef5e7; color: #7e5109; border-left: 4px solid #f39c12; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .container { box-shadow: none; }
+    .tabs, header, .actions, button, .no-print { display: none !important; }
+    .panel { display: block !important; }
+    .content { padding: 10px; }
+  }
+  @media (max-width: 600px) {
+    .insumo-row { grid-template-columns: 1fr 1fr; }
+    .tab { font-size: 0.85em; padding: 12px 5px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>📊 Gestão de Produtos</h1>
+    <p>Ficha Técnica • Precificação • DRE Gerencial</p>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="ficha">📋 Ficha Técnica</div>
+    <div class="tab" data-tab="preco">💰 Precificação</div>
+    <div class="tab" data-tab="dre">📈 DRE Gerencial</div>
+  </div>
+
+  <div class="content">
+    <!-- FICHA TÉCNICA -->
+    <div class="panel active" id="panel-ficha">
+      <h2>Ficha Técnica do Produto</h2>
+      <div class="alert alert-info">
+        Cadastre os insumos (matéria-prima), mão de obra direta e custos indiretos para compor o custo unitário do produto.
+      </div>
+
+      <div class="card">
+        <h3>Dados do Produto</h3>
+        <div class="form-grid">
+          <div>
+            <label>Nome do Produto</label>
+            <input type="text" id="prod-nome" placeholder="Ex: Bolo de Chocolate">
+          </div>
+          <div>
+            <label>Unidade de Medida</label>
+            <select id="prod-unidade">
+              <option value="UN">Unidade (UN)</option>
+              <option value="KG">Quilograma (KG)</option>
+              <option value="L">Litro (L)</option>
+              <option value="M">Metro (M)</option>
+              <option value="CX">Caixa (CX)</option>
+            </select>
+          </div>
+          <div>
+            <label>Rendimento (unidades produzidas)</label>
+            <input type="number" id="prod-rendimento" value="1" min="1" step="1">
+          </div>
+        </div>
+
+        <h3>Insumos / Matéria-Prima</h3>
+        <div id="insumos-lista"></div>
+        <button class="btn-secondary" onclick="addInsumo()">+ Adicionar Insumo</button>
+
+        <h3 style="margin-top:20px;">Mão de Obra Direta (MOD)</h3>
+        <div class="form-grid">
+          <div>
+            <label>Tempo de produção (horas)</label>
+            <input type="number" id="prod-mod-horas" value="0" step="0.01">
+          </div>
+          <div>
+            <label>Custo hora (R$)</label>
+            <input type="number" id="prod-mod-custo" value="0" step="0.01">
+          </div>
+        </div>
+
+        <h3>Custos Indiretos / Overhead</h3>
+        <div class="form-grid">
+          <div>
+            <label>Rateio fixo por produto (R$)</label>
+            <input type="number" id="prod-custo-indireto" value="0" step="0.01">
+          </div>
+          <div>
+            <label>Outros custos (R$)</label>
+            <input type="number" id="prod-outros" value="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-success" onclick="salvarProduto()">💾 Salvar Produto</button>
+          <button class="btn-secondary" onclick="limparFormulario()">🧹 Limpar</button>
+        </div>
+      </div>
+
+      <h3>Produtos Cadastrados</h3>
+      <div style="overflow-x:auto;">
+        <table id="tabela-produtos">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>UN</th>
+              <th>Custo Matéria-Prima</th>
+              <th>MOD</th>
+              <th>C. Indiretos</th>
+              <th>Custo Total</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRECIFICAÇÃO -->
+    <div class="panel" id="panel-preco">
+      <h2>Precificação por Produto</h2>
+      <div class="alert alert-info">
+        Defina o markup ou margem desejada para calcular o preço de venda. O markup considera impostos, despesas e lucro.
+      </div>
+
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <label>Produto</label>
+            <select id="preco-produto" onchange="atualizarPrecificacao()"></select>
+          </div>
+          <div>
+            <label>Método de Cálculo</label>
+            <select id="preco-metodo" onchange="atualizarPrecificacao()">
+              <option value="markup">Markup (multiplicador)</option>
+              <option value="margem">Margem de Lucro (%)</option>
+              <option value="manual">Preço Manual</option>
+            </select>
+          </div>
+          <div>
+            <label id="lbl-valor-metodo">Markup</label>
+            <input type="number" id="preco-valor" value="100" step="0.01" oninput="atualizarPrecificacao()">
+          </div>
+        </div>
+
+        <h3>Impostos e Despesas (% sobre venda)</h3>
+        <div class="form-grid">
+          <div>
+            <label>Impostos (%)</label>
+            <input type="number" id="preco-impostos" value="10" step="0.01" oninput="atualizarPrecificacao()">
+          </div>
+          <div>
+            <label>Comissões (%)</label>
+            <input type="number" id="preco-comissoes" value="5" step="0.01" oninput="atualizarPrecificacao()">
+          </div>
+          <div>
+            <label>Despesas Adm. (%)</label>
+            <input type="number" id="preco-despesas" value="10" step="0.01" oninput="atualizarPrecificacao()">
+          </div>
+          <div>
+            <label>Frete/Outros (%)</label>
+            <input type="number" id="preco-frete" value="0" step="0.01" oninput="atualizarPrecificacao()">
+          </div>
+        </div>
+
+        <div class="summary-grid" id="resumo-preco"></div>
+      </div>
+    </div>
+
+    <!-- DRE GERENCIAL -->
+    <div class="panel" id="panel-dre">
+      <h2>DRE Gerencial por Produto</h2>
+      <div class="alert alert-info">
+        Demonstrativo do Resultado do Exercício (DRE) gerencial projetado por produto. Informe a quantidade vendida para simular o resultado.
+      </div>
+
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <label>Produto</label>
+            <select id="dre-produto" onchange="atualizarDRE()"></select>
+          </div>
+          <div>
+            <label>Quantidade Vendida</label>
+            <input type="number" id="dre-quantidade" value="100" min="1" oninput="atualizarDRE()">
+          </div>
+          <div>
+            <label>Período</label>
+            <select id="dre-periodo" onchange="atualizarDRE()">
+              <option value="Mensal">Mensal</option>
+              <option value="Trimestral">Trimestral</option>
+              <option value="Anual">Anual</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions no-print">
+          <button class="btn-primary" onclick="window.print()">🖨️ Imprimir / PDF</button>
+        </div>
+
+        <div style="overflow-x:auto; margin-top:20px;">
+          <table class="dre-table" id="tabela-dre">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th style="text-align:right;">Valor (R$)</th>
+                <th style="text-align:right;">% s/ Receita</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="summary-grid" id="indicadores-dre" style="margin-top:20px;"></div>
+      </div>
+
+      <h3 style="margin-top:30px;">DRE Consolidado (Todos os Produtos)</h3>
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <label>Quantidade por Produto (mesma p/ todos)</label>
+            <input type="number" id="dre-cons-qtd" value="100" min="1" oninput="atualizarDREConsolidado()">
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="dre-table" id="tabela-dre-cons">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th style="text-align:right;">Valor (R$)</th>
+                <th style="text-align:right;">% s/ Receita</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============ ESTADO ============
+  let produtos = JSON.parse(localStorage.getItem('produtos') || '[]');
+  let editandoId = null;
+
+  // ============ TABS ============
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      if (tab.dataset.tab === 'preco' || tab.dataset.tab === 'dre') popularSelects();
+    });
+  });
+
+  // ============ INSUMOS ============
+  let insumosCount = 0;
+  function addInsumo(desc='', qtd='', custo='') {
+    insumosCount++;
+    const id = insumosCount;
+    const div = document.createElement('div');
+    div.className = 'insumo-row';
+    div.id = 'insumo-' + id;
+    div.innerHTML = `
+      <div><label>Descrição</label><input type="text" class="ins-desc" value="${desc}"></div>
+      <div><label>Quantidade</label><input type="number" class="ins-qtd" value="${qtd}" step="0.0001"></div>
+      <div><label>Custo Unit. (R$)</label><input type="number" class="ins-custo" value="${custo}" step="0.01"></div>
+      <div><label>Total</label><input type="text" class="ins-total" readonly value="0,00"></div>
+      <button class="btn-danger" onclick="removerInsumo(${id})">✕</button>
+    `;
+    document.getElementById('insumos-lista').appendChild(div);
+    div.querySelectorAll('input').forEach(inp => inp.addEventListener('input', calcularInsumoLinha));
+    calcularInsumoLinha();
+  }
+  function removerInsumo(id) {
+    document.getElementById('insumo-' + id)?.remove();
+    calcularInsumoLinha();
+  }
+  function calcularInsumoLinha() {
+    document.querySelectorAll('.insumo-row').forEach(row => {
+      const qtd = parseFloat(row.querySelector('.ins-qtd').value) || 0;
+      const custo = parseFloat(row.querySelector('.ins-custo').value) || 0;
+      row.querySelector('.ins-total').value = (qtd * custo).toFixed(2).replace('.', ',');
+    });
+  }
+  function getInsumosDoForm() {
+    const lista = [];
+    document.querySelectorAll('.insumo-row').forEach(row => {
+      const desc = row.querySelector('.ins-desc').value.trim();
+      const qtd = parseFloat(row.querySelector('.ins-qtd').value) || 0;
+      const custo = parseFloat(row.querySelector('.ins-custo').value) || 0;
+      if (desc || qtd > 0) lista.push({ desc, qtd, custo, total: qtd * custo });
+    });
+    return lista;
+  }
+
+  // ============ SALVAR PRODUTO ============
+  function salvarProduto() {
+    const nome = document.getElementById('prod-nome').value.trim();
+    if (!nome) { alert('Informe o nome do produto!'); return; }
+
+    const insumos = getInsumosDoForm();
+    const custoMP = insumos.reduce((s, i) => s + i.total, 0);
+    const horas = parseFloat(document.getElementById('prod-mod-horas').value) || 0;
+    const custoHora = parseFloat(document.getElementById('prod-mod-custo').value) || 0;
+    const mod = horas * custoHora;
+    const custoIndireto = parseFloat(document.getElementById('prod-custo-indireto').value) || 0;
+    const outros = parseFloat(document.getElementById('prod-outros').value) || 0;
+    const custoTotal = custoMP + mod + custoIndireto + outros;
+    const rendimento = parseFloat(document.getElementById('prod-rendimento').value) || 1;
+
+    const produto = {
+      id: editandoId || Date.now(),
+      nome,
+      unidade: document.getElementById('prod-unidade').value,
+      rendimento,
+      insumos,
+      custoMP,
+      mod,
+      custoIndireto,
+      outros,
+      custoTotal: custoTotal / rendimento,
+      precoVenda: 0,
+      impostos: 10,
+      comissoes: 5,
+      despesas: 10,
+      frete: 0
+    };
+
+    if (editandoId) {
+      const idx = produtos.findIndex(p => p.id === editandoId);
+      produto.precoVenda = produtos[idx].precoVenda || 0;
+      produto.impostos = produtos[idx].impostos;
+      produto.comissoes = produtos[idx].comissoes;
+      produto.despesas = produtos[idx].despesas;
+      produto.frete = produtos[idx].frete;
+      produtos[idx] = produto;
+      editandoId = null;
+    } else {
+      produto.precoVenda = produto.custoTotal * 2; // markup inicial 100%
+      produtos.push(produto);
+    }
+
+    persistir();
+    renderTabelaProdutos();
+    limparFormulario();
+    alert('Produto salvo com sucesso!');
+  }
+
+  function limparFormulario() {
+    document.getElementById('prod-nome').value = '';
+    document.getElementById('prod-rendimento').value = 1;
+    document.getElementById('prod-mod-horas').value = 0;
+    document.getElementById('prod-mod-custo').value = 0;
+    document.getElementById('prod-custo-indireto').value = 0;
+    document.getElementById('prod-outros').value = 0;
+    document.getElementById('insumos-lista').innerHTML = '';
+    editandoId = null;
+    addInsumo();
+  }
+
+  function editarProduto(id) {
+    const p = produtos.find(x => x.id === id);
+    if (!p) return;
+    editandoId = id;
+    document.getElementById('prod-nome').value = p.nome;
+    document.getElementById('prod-unidade').value = p.unidade;
+    document.getElementById('prod-rendimento').value = p.rendimento;
+    document.getElementById('prod-mod-horas').value = p.mod / ((parseFloat(document.getElementById('prod-mod-custo').value) || 1));
+    document.getElementById('insumos-lista').innerHTML = '';
+    p.insumos.forEach(i => addInsumo(i.desc, i.qtd, i.custo));
+    if (p.insumos.length === 0) addInsumo();
+    document.getElementById('prod-custo-indireto').value = p.custoIndireto;
+    document.getElementById('prod-outros').value = p.outros;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function excluirProduto(id) {
+    if (!confirm('Excluir este produto?')) return;
+    produtos = produtos.filter(p => p.id !== id);
+    persistir();
+    renderTabelaProdutos();
+  }
+
+  function persistir() {
+    localStorage.setItem('produtos', JSON.stringify(produtos));
+  }
+
+  function fmt(v) {
+    return 'R$ ' + (v || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  function renderTabelaProdutos() {
+    const tbody = document.querySelector('#tabela-produtos tbody');
+    if (produtos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">Nenhum produto cadastrado</td></tr>';
+      return;
+    }
+    tbody.innerHTML = produtos.map(p => `
+      <tr>
+        <td><strong>${p.nome}</strong></td>
+        <td>${p.unidade}</td>
+        <td>${fmt(p.custoMP)}</td>
+        <td>${fmt(p.mod)}</td>
+        <td>${fmt(p.custoIndireto + p.outros)}</td>
+        <td><strong>${fmt(p.custoTotal)}</strong></td>
+        <td>
+          <button class="btn-primary" style="padding:6px 12px;font-size:0.85em;" onclick="editarProduto(${p.id})">Editar</button>
+          <button class="btn-danger" onclick="excluirProduto(${p.id})">Excluir</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ============ PRECIFICAÇÃO ============
+  function popularSelects() {
+    const selects = ['preco-produto', 'dre-produto'];
+    selects.forEach(id => {
+      const sel = document.getElementById(id);
+      const atual = sel.value;
+      sel.innerHTML = produtos.length === 0
+        ? '<option value="">-- Cadastre um produto primeiro --</option>'
+        : produtos.map(p => `<option value="${p.id}">${p.nome} (Custo: ${fmt(p.custoTotal)})</option>`).join('');
+      if (atual && produtos.find(p => p.id == atual)) sel.value = atual;
+    });
+    atualizarPrecificacao();
+    atualizarDRE();
+    atualizarDREConsolidado();
+  }
+
+  function atualizarPrecificacao() {
+    const id = parseInt(document.getElementById('preco-produto').value);
+    const p = produtos.find(x => x.id === id);
+    const div = document.getElementById('resumo-preco');
+    if (!p) { div.innerHTML = '<p style="color:#999;">Selecione um produto</p>'; return; }
+
+    const metodo = document.getElementById('preco-metodo').value;
+    const lbl = document.getElementById('lbl-valor-metodo');
+    const valorInput = document.getElementById('preco-valor');
+
+    if (metodo === 'markup') lbl.textContent = 'Markup (%)';
+    else if (metodo === 'margem') lbl.textContent = 'Margem Desejada (%)';
+    else lbl.textContent = 'Preço de Venda (R$)';
+
+    const impostos = parseFloat(document.getElementById('preco-impostos').value) || 0;
+    const comissoes = parseFloat(document.getElementById('preco-comissoes').value) || 0;
+    const despesas = parseFloat(document.getElementById('preco-despesas').value) || 0;
+    const frete = parseFloat(document.getElementById('preco-frete').value) || 0;
+    const totalDed = impostos + comissoes + despesas + frete;
+
+    let precoVenda = 0;
+    if (metodo === 'markup') {
+      const mk = parseFloat(valorInput.value) || 0;
+      precoVenda = p.custoTotal * (1 + mk / 100);
+    } else if (metodo === 'margem') {
+      const margem = parseFloat(valorInput.value) || 0;
+      const divisor = 1 - (margem + totalDed) / 100;
+      precoVenda = divisor > 0 ? p.custoTotal / divisor : 0;
+    } else {
+      precoVenda = parseFloat(valorInput.value) || 0;
+    }
+
+    // Atualiza produto
+    p.precoVenda = precoVenda;
+    p.impostos = impostos; p.comissoes = comissoes; p.despesas = despesas; p.frete = frete;
+    persistir();
+
+    const receita = precoVenda;
+    const vImpostos = receita * impostos / 100;
+    const vComissoes = receita * comissoes / 100;
+    const vDespesas = receita * despesas / 100;
+    const vFrete = receita * frete / 100;
+    const lucroLiquido = receita - p.custoTotal - vImpostos - vComissoes - vDespesas - vFrete;
+    const margemLiq = receita > 0 ? (lucroLiquido / receita) * 100 : 0;
+    const markupReal = p.custoTotal > 0 ? ((precoVenda / p.custoTotal) - 1) * 100 : 0;
+
+    div.innerHTML = `
+      <div class="summary-item"><div class="label">Custo Total</div><div class="value">${fmt(p.custoTotal)}</div></div>
+      <div class="summary-item"><div class="label">Preço de Venda</div><div class="value">${fmt(precoVenda)}</div></div>
+      <div class="summary-item"><div class="label">Markup Real</div><div class="value">${markupReal.toFixed(2)}%</div></div>
+      <div class="summary-item"><div class="label">Lucro Unitário</div><div class="value ${lucroLiquido>=0?'positive':'negative'}">${fmt(lucroLiquido)}</div></div>
+      <div class="summary-item"><div class="label">Margem Líquida</div><div class="value ${margemLiq>=0?'positive':'negative'}">${margemLiq.toFixed(2)}%</div></div>
+      <div class="summary-item"><div class="label">Deduções Totais</div><div class="value negative">${fmt(vImpostos+vComissoes+vDespesas+vFrete)}</div></div>
+    `;
+  }
+
+  // ============ DRE ============
+  function atualizarDRE() {
+    const id = parseInt(document.getElementById('dre-produto').value);
+    const p = produtos.find(x => x.id === id);
+    const tbody = document.querySelector('#tabela-dre tbody');
+    const indDiv = document.getElementById('indicadores-dre');
+    if (!p) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">Selecione um produto</td></tr>'; indDiv.innerHTML=''; return; }
+
+    const qtd = parseFloat(document.getElementById('dre-quantidade').value) || 0;
+    const receita = p.precoVenda * qtd;
+    const cmv = p.custoTotal * qtd;
+    const vImpostos = receita * (p.impostos || 0) / 100;
+    const vComissoes = receita * (p.comissoes || 0) / 100;
+    const vDespesas = receita * (p.despesas || 0) / 100;
+    const vFrete = receita * (p.frete || 0) / 100;
+    const margemBruta = receita - cmv;
+    const totalDespOp = vImpostos + vComissoes + vDespesas + vFrete;
+    const lucroOp = margemBruta - totalDespOp;
+    const margemBrutaPct = receita > 0 ? (margemBruta / receita) * 100 : 0;
+    const lucroPct = receita > 0 ? (lucroOp / receita) * 100 : 0;
+    const periodo = document.getElementById('dre-periodo').value;
+
+    const pct = v => receita > 0 ? ((v / receita) * 100).toFixed(2) + '%' : '0,00%';
+    const cls = v => v >= 0 ? '' : 'negative';
+
+    tbody.innerHTML = `
+      <tr><td colspan="3" style="background:#34495e;color:#fff;font-weight:700;">DRE - ${p.nome} (${periodo})</td></tr>
+      <tr><td><strong>(-) Receita Bruta</strong> (${qtd} x ${fmt(p.precoVenda)})</td><td style="text-align:right;">${fmt(receita)}</td><td style="text-align:right;">100,00%</td></tr>
+      <tr><td>(-) CMV (Custo Mercadoria/Produto Vendida)</td><td style="text-align:right;">(${fmt(cmv)})</td><td style="text-align:right;">${pct(cmv)}</td></tr>
+      <tr class="total-row"><td>(=) Margem Bruta</td><td style="text-align:right;">${fmt(margemBruta)}</td><td style="text-align:right;">${margemBrutaPct.toFixed(2)}%</td></tr>
+      <tr><td>(-) Impostos</td><td style="text-align:right;">(${fmt(vImpostos)})</td><td style="text-align:right;">${pct(vImpostos)}</td></tr>
+      <tr><td>(-) Comissões</td><td style="text-align:right;">(${fmt(vComissoes)})</td><td style="text-align:right;">${pct(vComissoes)}</td></tr>
+      <tr><td>(-) Despesas Administrativas</td><td style="text-align:right;">(${fmt(vDespesas)})</td><td style="text-align:right;">${pct(vDespesas)}</td></tr>
+      <tr><td>(-) Frete e Outros</td><td style="text-align:right;">(${fmt(vFrete)})</td><td style="text-align:right;">${pct(vFrete)}</td></tr>
+      <tr class="${lucroOp>=0?'lucro-row':'prejuizo-row'}"><td>(=) ${lucroOp>=0?'LUCRO LÍQUIDO':'PREJUÍZO'}</td><td style="text-align:right;">${fmt(lucroOp)}</td><td style="text-align:right;">${lucroPct.toFixed(2)}%</td></tr>
+    `;
+
+    const lucroUnit = qtd > 0 ? lucroOp / qtd : 0;
+    const pontoEquilibrio = lucroUnit > 0 ? 0 : 'N/A';
+    indDiv.innerHTML = `
+      <div class="summary-item"><div class="label">Receita Total</div><div class="value">${fmt(receita)}</div></div>
+      <div class="summary-item"><div class="label">Margem Bruta</div><div class="value">${fmt(margemBruta)} (${margemBrutaPct.toFixed(1)}%)</div></div>
+      <div class="summary-item"><div class="label">Resultado Líquido</div><div class="value ${lucroOp>=0?'positive':'negative'}">${fmt(lucroOp)}</div></div>
+      <div class="summary-item"><div class="label">Lucro por Unidade</div><div class="value ${lucroUnit>=0?'positive':'negative'}">${fmt(lucroUnit)}</div></div>
+    `;
+  }
+
+  function atualizarDREConsolidado() {
+    const qtd = parseFloat(document.getElementById('dre-cons-qtd').value) || 0;
+    const tbody = document.querySelector('#tabela-dre-cons tbody');
+    if (produtos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">Nenhum produto</td></tr>';
+      return;
+    }
+    let receita = 0, cmv = 0, imp = 0, com = 0, desp = 0, fr = 0;
+    produtos.forEach(p => {
+      const r = p.precoVenda * qtd;
+      receita += r;
+      cmv += p.custoTotal * qtd;
+      imp += r * (p.impostos || 0) / 100;
+      com += r * (p.comissoes || 0) / 100;
+      desp += r * (p.despesas || 0) / 100;
+      fr += r * (p.frete || 0) / 100;
+    });
+    const mb = receita - cmv;
+    const totalDesp = imp + com + desp + fr;
+    const ll = mb - totalDesp;
+    const pct = v => receita > 0 ? ((v / receita) * 100).toFixed(2) + '%' : '0,00%';
+
+    tbody.innerHTML = `
+      <tr><td colspan="3" style="background:#34495e;color:#fff;font-weight:700;">DRE Consolidado (${produtos.length} produtos)</td></tr>
+      <tr><td>(-) Receita Bruta</td><td style="text-align:right;">${fmt(receita)}</td><td style="text-align:right;">100,00%</td></tr>
+      <tr><td>(-) CMV</td><td style="text-align:right;">(${fmt(cmv)})</td><td style="text-align:right;">${pct(cmv)}</td></tr>
+      <tr class="total-row"><td>(=) Margem Bruta</td><td style="text-align:right;">${fmt(mb)}</td><td style="text-align:right;">${receita>0?((mb/receita)*100).toFixed(2):'0,00'}%</td></tr>
+      <tr><td>(-) Impostos</td><td style="text-align:right;">(${fmt(imp)})</td><td style="text-align:right;">${pct(imp)}</td></tr>
+      <tr><td>(-) Comissões</td><td style="text-align:right;">(${fmt(com)})</td><td style="text-align:right;">${pct(com)}</td></tr>
+      <tr><td>(-) Despesas Administrativas</td><td style="text-align:right;">(${fmt(desp)})</td><td style="text-align:right;">${pct(desp)}</td></tr>
+      <tr><td>(-) Frete e Outros</td><td style="text-align:right;">(${fmt(fr)})</td><td style="text-align:right;">${pct(fr)}</td></tr>
+      <tr class="${ll>=0?'lucro-row':'prejuizo-row'}"><td>(=) ${ll>=0?'LUCRO LÍQUIDO':'PREJUÍZO'}</td><td style="text-align:right;">${fmt(ll)}</td><td style="text-align:right;">${receita>0?((ll/receita)*100).toFixed(2):'0,00'}%</td></tr>
+    `;
+  }
+
+  // ============ INICIALIZAÇÃO ============
+  addInsumo();
+  renderTabelaProdutos();
+  popularSelects();
+</script>
+</body>
+</html>
