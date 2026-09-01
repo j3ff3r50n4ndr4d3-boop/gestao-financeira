@@ -3,274 +3,1426 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FinanceHub — Gestão Financeira</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💰</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
-<script src="vendor/chart.umd.min.js"></script>
+<title>Precifica Fácil — Precificação para Pequenas Empresas</title>
+<meta name="description" content="Site completo de precificação para pequenas empresas: custo por produto, markup, margem, DRE gerencial, tabela de preços e guia prático.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --teal-900:#042f2e; --teal-800:#115e59; --teal-700:#0f766e; --teal-600:#0d9488; --teal-100:#ccfbf1; --teal-50:#f0fdfa;
+    --amber-500:#f59e0b; --amber-600:#d97706; --amber-100:#fef3c7;
+    --red-600:#dc2626; --red-100:#fee2e2;
+    --green-600:#16a34a; --green-100:#dcfce7;
+    --slate-900:#0f172a; --slate-700:#334155; --slate-600:#475569; --slate-500:#64748b; --slate-400:#94a3b8;
+    --slate-200:#e2e8f0; --slate-100:#f1f5f9; --slate-50:#f8fafc; --white:#fff;
+    --radius:12px; --shadow:0 1px 3px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.06);
+    --font:'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { font-family:var(--font); background:var(--slate-100); color:var(--slate-900); min-height:100vh; }
+
+  /* ===== LAYOUT ===== */
+  .app-shell { display:flex; min-height:100vh; }
+  .sidebar {
+    width:260px; background:linear-gradient(180deg, var(--teal-900) 0%, #042f2e 100%);
+    color:#fff; padding:22px 14px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; flex-shrink:0;
+  }
+  .brand { display:flex; align-items:center; gap:10px; padding:0 8px 20px; border-bottom:1px solid rgba(255,255,255,.12); }
+  .brand .logo { font-size:1.9em; }
+  .brand h1 { font-size:1.15em; line-height:1.2; }
+  .brand small { display:block; font-weight:400; opacity:.65; font-size:.75em; margin-top:2px; }
+  .nav { margin-top:16px; display:flex; flex-direction:column; gap:4px; flex:1; }
+  .nav a {
+    display:flex; align-items:center; gap:10px; color:rgba(255,255,255,.78); text-decoration:none;
+    padding:11px 12px; border-radius:10px; font-size:.92em; font-weight:600; transition:all .15s;
+  }
+  .nav a:hover { background:rgba(255,255,255,.08); color:#fff; }
+  .nav a.active { background:var(--teal-600); color:#fff; box-shadow:0 4px 14px rgba(13,148,136,.35); }
+  .nav a .ico { font-size:1.15em; }
+  .sidebar-foot { font-size:.7em; opacity:.5; padding:14px 8px 0; border-top:1px solid rgba(255,255,255,.12); margin-top:14px; }
+
+  .main { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar {
+    background:var(--white); padding:16px 28px; display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--slate-200); position:sticky; top:0; z-index:20; gap:12px;
+  }
+  .topbar h2 { font-size:1.25em; }
+  .topbar .sub { color:var(--slate-500); font-size:.85em; margin-top:2px; }
+  .topbar-actions { display:flex; gap:8px; align-items:center; }
+
+  .content { padding:26px 28px 60px; max-width:1180px; width:100%; margin:0 auto; }
+  .panel { display:none; animation:fadeIn .25s ease; }
+  .panel.active { display:block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px);} to { opacity:1; transform:none; } }
+
+  /* ===== COMPONENTES ===== */
+  .card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px; margin-bottom:20px; }
+  .card h3 { font-size:1.02em; color:var(--teal-900); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .card h3 .badge { margin-left:auto; }
+  .card-title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+  .card-title-row h3 { margin-bottom:0; }
+
+  .grid { display:grid; gap:16px; }
+  .grid-2 { grid-template-columns:repeat(2,1fr); }
+  .grid-3 { grid-template-columns:repeat(3,1fr); }
+  .grid-4 { grid-template-columns:repeat(4,1fr); }
+  .grid-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+
+  .form-group label { display:block; font-size:.78em; font-weight:700; color:var(--slate-600); margin-bottom:5px; text-transform:uppercase; letter-spacing:.03em; }
+  .form-group .hint { font-size:.75em; color:var(--slate-400); margin-top:4px; }
+  input, select {
+    width:100%; padding:10px 12px; border:1px solid var(--slate-200); border-radius:9px; font-size:.95em;
+    font-family:inherit; background:var(--white); color:var(--slate-900); transition:border .15s, box-shadow .15s;
+  }
+  input:focus, select:focus { outline:none; border-color:var(--teal-600); box-shadow:0 0 0 3px rgba(13,148,136,.15); }
+  input[readonly] { background:var(--slate-50); color:var(--slate-500); font-weight:600; }
+  .input-group { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  .btn {
+    display:inline-flex; align-items:center; gap:7px; border:none; border-radius:9px; padding:10px 16px;
+    font-size:.9em; font-weight:700; font-family:inherit; cursor:pointer; transition:all .15s; text-decoration:none;
+  }
+  .btn:active { transform:scale(.97); }
+  .btn-primary { background:var(--teal-700); color:#fff; }
+  .btn-primary:hover { background:var(--teal-800); }
+  .btn-amber { background:var(--amber-500); color:#fff; }
+  .btn-amber:hover { background:var(--amber-600); }
+  .btn-green { background:var(--green-600); color:#fff; }
+  .btn-green:hover { background:#15803d; }
+  .btn-outline { background:var(--white); color:var(--teal-700); border:1.5px solid var(--teal-600); }
+  .btn-outline:hover { background:var(--teal-50); }
+  .btn-danger { background:var(--red-600); color:#fff; }
+  .btn-danger:hover { background:#b91c1c; }
+  .btn-ghost { background:var(--slate-100); color:var(--slate-700); }
+  .btn-ghost:hover { background:var(--slate-200); }
+  .btn-sm { padding:6px 11px; font-size:.8em; border-radius:7px; }
+  .btn[disabled] { opacity:.5; cursor:not-allowed; }
+
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:22px; }
+  .kpi {
+    background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;
+    border-top:4px solid var(--teal-600); position:relative; overflow:hidden;
+  }
+  .kpi.amber { border-top-color:var(--amber-500); }
+  .kpi.green { border-top-color:var(--green-600); }
+  .kpi.red { border-top-color:var(--red-600); }
+  .kpi .k-label { font-size:.72em; font-weight:700; color:var(--slate-500); text-transform:uppercase; letter-spacing:.04em; }
+  .kpi .k-value { font-size:1.55em; font-weight:800; color:var(--slate-900); margin-top:6px; }
+  .kpi .k-sub { font-size:.78em; color:var(--slate-400); margin-top:4px; }
+  .pos { color:var(--green-600) !important; }
+  .neg { color:var(--red-600) !important; }
+
+  table { width:100%; border-collapse:collapse; font-size:.9em; }
+  th { text-align:left; padding:10px 12px; background:var(--slate-900); color:#fff; font-weight:700; font-size:.8em; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+  td { padding:10px 12px; border-bottom:1px solid var(--slate-100); vertical-align:middle; }
+  tbody tr:hover { background:var(--slate-50); }
+  .num { text-align:right; white-space:nowrap; }
+  .table-wrap { overflow-x:auto; }
+  .tfoot td { background:var(--slate-100); font-weight:800; }
+  .row-total { background:var(--slate-100) !important; font-weight:800; }
+  .row-lucro { background:var(--green-100) !important; font-weight:800; }
+  .row-prejuizo { background:var(--red-100) !important; font-weight:800; }
+
+  .badge { display:inline-flex; align-items:center; gap:4px; font-size:.72em; font-weight:800; padding:3px 9px; border-radius:99px; text-transform:uppercase; letter-spacing:.03em; }
+  .badge-green { background:var(--green-100); color:var(--green-600); }
+  .badge-red { background:var(--red-100); color:var(--red-600); }
+  .badge-amber { background:var(--amber-100); color:var(--amber-600); }
+  .badge-teal { background:var(--teal-100); color:var(--teal-700); }
+  .badge-gray { background:var(--slate-200); color:var(--slate-600); }
+
+  .alert { padding:13px 15px; border-radius:10px; font-size:.88em; margin-bottom:18px; display:flex; gap:10px; align-items:flex-start; line-height:1.45; }
+  .alert-info { background:var(--teal-50); color:var(--teal-800); border-left:4px solid var(--teal-600); }
+  .alert-warn { background:var(--amber-100); color:#92400e; border-left:4px solid var(--amber-500); }
+  .alert-danger { background:var(--red-100); color:#991b1b; border-left:4px solid var(--red-600); }
+  .alert-success { background:var(--green-100); color:#166534; border-left:4px solid var(--green-600); }
+
+  .insumo-row { display:grid; grid-template-columns:2.2fr 1fr 1fr 1fr 1fr auto; gap:8px; margin-bottom:8px; align-items:center; }
+  .insumo-row .form-group label { font-size:.68em; }
+  .bar-row { margin-bottom:10px; }
+  .bar-top { display:flex; justify-content:space-between; font-size:.82em; margin-bottom:4px; }
+  .bar-top b { color:var(--slate-700); }
+  .bar-track { height:22px; background:var(--slate-100); border-radius:6px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:6px; background:linear-gradient(90deg,var(--teal-600),var(--teal-400)); min-width:0; transition:width .4s; }
+  .bar-fill.warn { background:linear-gradient(90deg,var(--amber-500),#fbbf24); }
+
+  .hero {
+    background:linear-gradient(120deg, var(--teal-900) 0%, var(--teal-700) 60%, var(--teal-600) 100%);
+    color:#fff; border-radius:16px; padding:28px 30px; margin-bottom:22px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .hero h2 { font-size:1.5em; margin-bottom:6px; }
+  .hero p { opacity:.85; max-width:640px; line-height:1.55; font-size:.95em; }
+  .hero .chips { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .hero .chip { background:rgba(255,255,255,.14); padding:5px 12px; border-radius:99px; font-size:.78em; font-weight:700; }
+
+  .empty { text-align:center; color:var(--slate-400); padding:34px 10px; font-size:.92em; }
+  .empty .big { font-size:2.4em; display:block; margin-bottom:8px; }
+  .section-title { font-size:1.02em; font-weight:800; color:var(--teal-900); margin:26px 0 12px; display:flex; align-items:center; gap:8px; }
+
+  .guide h3 { color:var(--teal-900); margin:18px 0 8px; font-size:1.02em; }
+  .guide p, .guide li { color:var(--slate-600); font-size:.92em; line-height:1.65; }
+  .guide ul, .guide ol { padding-left:22px; margin:8px 0; }
+  .guide li { margin-bottom:6px; }
+  .formula { background:var(--slate-900); color:#e2e8f0; border-radius:10px; padding:13px 16px; font-family:Consolas,Menlo,monospace; font-size:.88em; margin:10px 0; overflow-x:auto; }
+  .formula b { color:#5eead4; }
+
+  .divider { border:none; border-top:1px solid var(--slate-200); margin:18px 0; }
+
+  .toast {
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--slate-900); color:#fff;
+    padding:12px 20px; border-radius:10px; font-size:.88em; font-weight:600; box-shadow:0 10px 30px rgba(0,0,0,.3);
+    opacity:0; transition:all .3s; z-index:100; pointer-events:none; max-width:90vw; text-align:center;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.success { background:var(--green-600); }
+  .toast.error { background:var(--red-600); }
+
+  .print-root { display:none; }
+  .bar-chart-empty { color:var(--slate-400); font-size:.9em; padding:20px 0; text-align:center; }
+
+  /* ===== RESPONSIVO ===== */
+  @media (max-width:960px) {
+    .app-shell { flex-direction:column; }
+    .sidebar { width:100%; height:auto; position:static; padding:14px; }
+    .brand { padding-bottom:12px; }
+    .nav { flex-direction:row; overflow-x:auto; padding-bottom:4px; }
+    .nav a { white-space:nowrap; }
+    .sidebar-foot { display:none; }
+    .grid-4, .grid-3, .grid-2 { grid-template-columns:1fr; }
+    .content { padding:18px 14px 50px; }
+    .topbar { padding:14px 16px; flex-wrap:wrap; }
+  }
+  @media (max-width:640px) {
+    .insumo-row { grid-template-columns:1fr 1fr; }
+    .hero { padding:20px; }
+    .hero h2 { font-size:1.2em; }
+  }
+
+  /* ===== IMPRESSÃO ===== */
+  @media print {
+    body { background:#fff; }
+    .app-shell, .toast, .topbar-actions { display:none !important; }
+    .content { padding:0; max-width:100%; }
+    .panel { display:block !important; }
+    .no-print { display:none !important; }
+    .card { box-shadow:none; border:1px solid #ccc; break-inside:avoid; }
+    body.printing .app-shell { display:none !important; }
+    body.printing .print-root { display:block; }
+    .print-root { font-family:var(--font); color:#000; padding:10px; }
+    .print-root h1 { font-size:1.4em; margin-bottom:4px; }
+    .print-root .p-sub { color:#555; font-size:.85em; margin-bottom:16px; }
+    .print-root table { border-collapse:collapse; width:100%; font-size:.85em; }
+    .print-root th { background:#111 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .print-root td, .print-root th { border:1px solid #999; padding:6px 8px; }
+    .print-root .row-lucro { background:#dcfce7 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .print-root .row-prejuizo { background:#fee2e2 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
 </head>
 <body>
 
-<div class="app">
+<div class="print-root" id="print-root"></div>
 
+<div class="app-shell">
   <!-- ===== SIDEBAR ===== -->
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar">
     <div class="brand">
-      <div class="brand-icon">💰</div>
-      <div class="brand-text">
-        <strong>FinanceHub</strong>
-        <span>Gestão Financeira</span>
+      <span class="logo">💰</span>
+      <div>
+        <h1>Precifica Fácil</h1>
+        <small>Precificação p/ pequenas empresas</small>
       </div>
     </div>
-
-    <nav class="nav">
-      <button class="nav-item active" data-view="dashboard"><span class="nav-ico">📊</span> Dashboard</button>
-      <button class="nav-item" data-view="payables"><span class="nav-ico">📤</span> Contas a Pagar <span class="nav-badge danger" id="badgePayables"></span></button>
-      <button class="nav-item" data-view="receivables"><span class="nav-ico">📥</span> Contas a Receber <span class="nav-badge success" id="badgeReceivables"></span></button>
-      <button class="nav-item" data-view="cashflow"><span class="nav-ico">💹</span> Fluxo de Caixa</button>
-      <button class="nav-item" data-view="dre"><span class="nav-ico">📑</span> DRE</button>
-      <button class="nav-item" data-view="accounts"><span class="nav-ico">🏦</span> Contas Bancárias</button>
-      <button class="nav-item" data-view="cards"><span class="nav-ico">💳</span> Cartões de Crédito</button>
+    <nav class="nav" id="nav">
+      <a href="#dashboard" data-panel="dashboard" class="active"><span class="ico">🏠</span> Dashboard</a>
+      <a href="#produtos" data-panel="produtos"><span class="ico">📋</span> Produtos &amp; Custos</a>
+      <a href="#precificacao" data-panel="precificacao"><span class="ico">🏷️</span> Precificação</a>
+      <a href="#dre" data-panel="dre"><span class="ico">📈</span> DRE Gerencial</a>
+      <a href="#tabela" data-panel="tabela"><span class="ico">📄</span> Tabela de Preços</a>
+      <a href="#empresa" data-panel="empresa"><span class="ico">🏢</span> Empresa</a>
+      <a href="#guia" data-panel="guia"><span class="ico">📚</span> Guia de Preços</a>
     </nav>
-
-    <div class="sidebar-footer">
-      <div class="sidebar-balance">
-        <span>Saldo em contas</span>
-        <strong id="sidebarBalance">R$ 0,00</strong>
-      </div>
-      <div class="sidebar-actions">
-        <button class="btn-ghost sm" id="btnExport" title="Exportar dados">⬇ Exportar</button>
-        <button class="btn-ghost sm" id="btnImport" title="Importar dados">⬆ Importar</button>
-        <button class="btn-ghost sm" id="btnReset" title="Restaurar dados de demonstração">↺ Demo</button>
-      </div>
-      <input type="file" id="importFile" accept="application/json" hidden>
-    </div>
+    <div class="sidebar-foot">💾 Dados salvos automaticamente no seu navegador.</div>
   </aside>
 
-  <!-- ===== MAIN ===== -->
+  <!-- ===== CONTEÚDO ===== -->
   <main class="main">
-    <header class="topbar">
-      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
-      <h1 id="viewTitle">Dashboard</h1>
-      <div class="month-nav" id="monthNav">
-        <button id="prevMonth" aria-label="Mês anterior">‹</button>
-        <span id="monthLabel"></span>
-        <button id="nextMonth" aria-label="Próximo mês">›</button>
-        <button class="today-btn" id="todayBtn">Hoje</button>
+    <div class="topbar no-print">
+      <div>
+        <h2 id="page-title">Dashboard</h2>
+        <div class="sub" id="page-sub">Visão geral do seu negócio</div>
       </div>
-      <button class="theme-toggle" id="themeToggle" title="Alternar modo claro/escuro">🌙</button>
-    </header>
-
-    <!-- ========== DASHBOARD ========== -->
-    <section class="view active" id="view-dashboard">
-      <div class="kpi-grid">
-        <div class="kpi-card kpi-revenue">
-          <div class="kpi-head"><span class="kpi-ico">📈</span><span>Receitas do mês</span></div>
-          <strong class="kpi-value" id="kpiRevenue">R$ 0,00</strong>
-          <div class="kpi-sub" id="kpiRevenueSub"></div>
-        </div>
-        <div class="kpi-card kpi-expense">
-          <div class="kpi-head"><span class="kpi-ico">📉</span><span>Despesas do mês</span></div>
-          <strong class="kpi-value" id="kpiExpense">R$ 0,00</strong>
-          <div class="kpi-sub" id="kpiExpenseSub"></div>
-        </div>
-        <div class="kpi-card kpi-profit">
-          <div class="kpi-head"><span class="kpi-ico">💵</span><span>Lucro do mês</span></div>
-          <strong class="kpi-value" id="kpiProfit">R$ 0,00</strong>
-          <div class="kpi-sub" id="kpiProfitSub"></div>
-        </div>
-        <div class="kpi-card kpi-margin">
-          <div class="kpi-head"><span class="kpi-ico">🎯</span><span>Margem de lucro</span></div>
-          <strong class="kpi-value" id="kpiMargin">0%</strong>
-          <div class="kpi-bar"><div class="kpi-bar-fill" id="kpiMarginBar"></div></div>
-        </div>
-        <div class="kpi-card kpi-balance">
-          <div class="kpi-head"><span class="kpi-ico">🏦</span><span>Saldo em contas</span></div>
-          <strong class="kpi-value" id="kpiBalance">R$ 0,00</strong>
-          <div class="kpi-sub" id="kpiBalanceSub"></div>
-        </div>
-        <div class="kpi-card kpi-cards">
-          <div class="kpi-head"><span class="kpi-ico">💳</span><span>Faturas de cartões</span></div>
-          <strong class="kpi-value" id="kpiCards">R$ 0,00</strong>
-          <div class="kpi-sub" id="kpiCardsSub"></div>
-        </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="carregarExemplo(true)">✨ Dados de exemplo</button>
+        <button class="btn btn-primary btn-sm" onclick="imprimirPainelAtual()">🖨️ Imprimir</button>
       </div>
+    </div>
 
-      <div class="grid-2">
-        <div class="panel-card">
-          <div class="panel-head"><h3>Receitas × Despesas — últimos 6 meses</h3></div>
-          <div class="chart-wrap"><canvas id="chartRevExp"></canvas></div>
-        </div>
-        <div class="panel-card">
-          <div class="panel-head"><h3>Despesas por categoria (mês)</h3></div>
-          <div class="chart-wrap"><canvas id="chartCategories"></canvas></div>
-        </div>
-      </div>
+    <div class="content">
 
-      <div class="grid-2">
-        <div class="panel-card">
-          <div class="panel-head">
-            <h3>Próximos vencimentos</h3>
-            <button class="btn-ghost sm" data-goto="payables">ver tudo →</button>
+      <!-- ============ DASHBOARD ============ -->
+      <section class="panel active" id="panel-dashboard">
+        <div class="hero">
+          <h2>👋 Bem-vindo ao Precifica Fácil</h2>
+          <p>Calcule o custo real de cada produto, defina o preço certo (com impostos, taxas e margem) e acompanhe o resultado com um DRE gerencial — tudo em um só lugar, direto no seu navegador.</p>
+          <div class="chips">
+            <span class="chip">✅ Custo por unidade</span>
+            <span class="chip">✅ Markup e margem</span>
+            <span class="chip">✅ Ponto de equilíbrio</span>
+            <span class="chip">✅ DRE consolidado</span>
+            <span class="chip">✅ Exportar tabela</span>
           </div>
-          <div id="upcomingList" class="mini-list"></div>
         </div>
-        <div class="panel-card">
-          <div class="panel-head">
-            <h3>Próximos recebimentos</h3>
-            <button class="btn-ghost sm" data-goto="receivables">ver tudo →</button>
+
+        <div class="kpi-grid" id="kpis">
+          <div class="kpi"><div class="k-label">Produtos ativos</div><div class="k-value" id="kpi-produtos">0</div><div class="k-sub">cadastrados</div></div>
+          <div class="kpi amber"><div class="k-label">Faturamento projetado</div><div class="k-value" id="kpi-faturamento">R$ 0,00</div><div class="k-sub">mensal estimado</div></div>
+          <div class="kpi red"><div class="k-label">Custo total</div><div class="k-value" id="kpi-custo">R$ 0,00</div><div class="k-sub">CMV projetado</div></div>
+          <div class="kpi green"><div class="k-label">Lucro líquido projetado</div><div class="k-value" id="kpi-lucro">R$ 0,00</div><div class="k-sub">após deduções</div></div>
+          <div class="kpi"><div class="k-label">Margem líquida média</div><div class="k-value" id="kpi-margem">0,0%</div><div class="k-sub">ponderada pela receita</div></div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-title-row">
+              <h3>📊 Mix de Receita por Produto</h3>
+            </div>
+            <div id="chart-mix"></div>
           </div>
-          <div id="incomingList" class="mini-list"></div>
+          <div class="card">
+            <div class="card-title-row"><h3>🏆 Destaques do Portfólio</h3></div>
+            <div id="destaques"></div>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <!-- ========== CONTAS A PAGAR ========== -->
-    <section class="view" id="view-payables">
-      <div class="toolbar">
-        <div class="summary-chips" id="payablesSummary"></div>
-        <div class="toolbar-right">
-          <input type="search" class="search" id="searchPayables" placeholder="Buscar…">
-          <select id="filterPayables">
-            <option value="all">Todas</option>
-            <option value="pendente">Pendentes</option>
-            <option value="vencido">Vencidas</option>
-            <option value="pago">Pagas</option>
-          </select>
-          <button class="btn-primary" id="btnNewPayable">+ Nova conta</button>
+        <div class="card">
+          <div class="card-title-row">
+            <h3>⚡ Atalhos</h3>
+          </div>
+          <div class="grid grid-3">
+            <button class="btn btn-primary" onclick="irPara('produtos')">📋 Cadastrar produto</button>
+            <button class="btn btn-amber" onclick="irPara('precificacao')">🏷️ Calcular preço</button>
+            <button class="btn btn-green" onclick="irPara('tabela')">📄 Ver tabela de preços</button>
+          </div>
         </div>
-      </div>
-      <div class="panel-card table-card">
-        <table class="data-table" id="tablePayables">
-          <thead>
-            <tr><th>Descrição</th><th>Categoria</th><th>Vencimento</th><th>Origem</th><th class="right">Valor</th><th>Status</th><th class="right">Ações</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <div class="empty-state" id="emptyPayables" hidden>Nenhuma conta a pagar neste período. 🎉</div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ========== CONTAS A RECEBER ========== -->
-    <section class="view" id="view-receivables">
-      <div class="toolbar">
-        <div class="summary-chips" id="receivablesSummary"></div>
-        <div class="toolbar-right">
-          <input type="search" class="search" id="searchReceivables" placeholder="Buscar…">
-          <select id="filterReceivables">
-            <option value="all">Todas</option>
-            <option value="pendente">Pendentes</option>
-            <option value="atrasado">Atrasadas</option>
-            <option value="recebido">Recebidas</option>
-          </select>
-          <button class="btn-primary" id="btnNewReceivable">+ Novo recebimento</button>
+      <!-- ============ PRODUTOS & CUSTOS ============ -->
+      <section class="panel" id="panel-produtos">
+        <div class="alert alert-info">
+          💡 <span><b>Ficha técnica de custo:</b> cadastre os insumos, mão de obra e custos indiretos de uma produção (receita/lote). O sistema divide pelo rendimento e calcula o <b>custo unitário real</b> — o ponto de partida de todo preço.</span>
         </div>
-      </div>
-      <div class="panel-card table-card">
-        <table class="data-table" id="tableReceivables">
-          <thead>
-            <tr><th>Descrição</th><th>Categoria</th><th>Vencimento</th><th>Conta destino</th><th class="right">Valor</th><th>Status</th><th class="right">Ações</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <div class="empty-state" id="emptyReceivables" hidden>Nenhum recebimento neste período.</div>
-      </div>
-    </section>
 
-    <!-- ========== FLUXO DE CAIXA ========== -->
-    <section class="view" id="view-cashflow">
-      <div class="toolbar">
-        <div class="tab-switch">
-          <button class="tab-btn active" data-cf="daily">Diário</button>
-          <button class="tab-btn" data-cf="monthly">Mensal</button>
-        </div>
-        <div class="summary-chips" id="cashflowSummary"></div>
-      </div>
+        <div class="card">
+          <div class="card-title-row">
+            <h3 id="form-title">📋 Ficha Técnica do Produto</h3>
+            <span class="badge badge-teal" id="form-status" style="display:none;">✏️ Editando</span>
+          </div>
 
-      <div id="cfDaily">
-        <div class="panel-card">
-          <div class="panel-head"><h3 id="cfDailyChartTitle">Fluxo diário</h3></div>
-          <div class="chart-wrap tall"><canvas id="chartDaily"></canvas></div>
-        </div>
-        <div class="panel-card table-card">
-          <table class="data-table" id="tableDaily">
-            <thead><tr><th>Dia</th><th class="right">Entradas</th><th class="right">Saídas</th><th class="right">Resultado do dia</th><th class="right">Acumulado</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+          <div class="grid-form" style="margin-bottom:16px;">
+            <div class="form-group">
+              <label>Nome do produto *</label>
+              <input type="text" id="pf-nome" placeholder="Ex: Bolo de Chocolate">
+            </div>
+            <div class="form-group">
+              <label>Unidade de venda</label>
+              <select id="pf-unidade">
+                <option value="UN">Unidade (UN)</option><option value="KG">Quilograma (KG)</option>
+                <option value="G">Grama (G)</option><option value="L">Litro (L)</option><option value="ML">Mililitro (ML)</option>
+                <option value="M">Metro (M)</option><option value="CX">Caixa (CX)</option><option value="CZ">Cento (CZ)</option>
+                <option value="PCT">Pacote (PCT)</option><option value="HR">Hora (HR)</option><option value="SVC">Serviço (SVC)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Rendimento (unid. produzidas)</label>
+              <input type="number" id="pf-rendimento" value="1" min="1" step="1">
+              <div class="hint">Quantas unidades saem desta produção?</div>
+            </div>
+          </div>
 
-      <div id="cfMonthly" hidden>
-        <div class="panel-card">
-          <div class="panel-head"><h3 id="cfMonthlyChartTitle">Fluxo mensal</h3></div>
-          <div class="chart-wrap tall"><canvas id="chartMonthly"></canvas></div>
-        </div>
-        <div class="panel-card table-card">
-          <table class="data-table" id="tableMonthly">
-            <thead><tr><th>Mês</th><th class="right">Entradas</th><th class="right">Saídas</th><th class="right">Resultado</th><th class="right">Acumulado</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+          <div class="section-title" style="margin-top:6px;">🧺 Insumos / Matéria-prima</div>
+          <div id="pf-insumos"></div>
+          <button class="btn btn-outline btn-sm" onclick="addInsumo()">＋ Adicionar insumo</button>
 
-    <!-- ========== DRE ========== -->
-    <section class="view" id="view-dre">
-      <div class="toolbar">
-        <div class="summary-chips" id="dreSummary"></div>
-      </div>
-      <div class="panel-card">
-        <div class="panel-head"><h3 id="dreChartTitle">Resultado líquido mês a mês</h3></div>
-        <div class="chart-wrap"><canvas id="chartDre"></canvas></div>
-      </div>
-      <div class="panel-card table-card">
-        <table class="data-table dre-table" id="tableDre">
-          <thead>
-            <tr><th>Demonstração do Resultado</th><th class="right" id="dreColMonth">Mês</th><th class="right">% Rec.</th><th class="right" id="dreColYear">Acumulado no ano</th><th class="right">% Rec.</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
+          <div class="section-title">👩‍🍳 Mão de Obra Direta (MOD)</div>
+          <div class="grid-form">
+            <div class="form-group">
+              <label>Tempo de produção (horas)</label>
+              <input type="number" id="pf-mod-horas" value="0" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label>Custo da hora (R$)</label>
+              <input type="number" id="pf-mod-custo" value="0" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label>Encargos / benefícios (%)</label>
+              <input type="number" id="pf-mod-encargos" value="0" min="0" step="0.01">
+              <div class="hint">Ex.: 30% sobre o valor da hora</div>
+            </div>
+          </div>
 
-    <!-- ========== CONTAS BANCÁRIAS ========== -->
-    <section class="view" id="view-accounts">
-      <div class="toolbar">
-        <div class="summary-chips" id="accountsSummary"></div>
-        <div class="toolbar-right">
-          <button class="btn-primary" id="btnNewAccount">+ Nova conta bancária</button>
-        </div>
-      </div>
-      <div class="cards-grid" id="accountsGrid"></div>
-    </section>
+          <div class="section-title">🏭 Custos indiretos &amp; perdas</div>
+          <div class="grid-form">
+            <div class="form-group">
+              <label>Indiretos por produção (R$)</label>
+              <input type="number" id="pf-indiretos" value="0" min="0" step="0.01">
+              <div class="hint">Aluguel rateado, energia, gás…</div>
+            </div>
+            <div class="form-group">
+              <label>Outros custos (R$)</label>
+              <input type="number" id="pf-outros" value="0" min="0" step="0.01">
+              <div class="hint">Embalagem fora dos insumos, frete…</div>
+            </div>
+            <div class="form-group">
+              <label>Perdas / quebras (%)</label>
+              <input type="number" id="pf-perdas" value="0" min="0" step="0.01">
+              <div class="hint">% sobre o custo total</div>
+            </div>
+            <div class="form-group">
+              <label>Custos fixos mensais (R$)</label>
+              <input type="number" id="pf-fixos" value="0" min="0" step="0.01">
+              <div class="hint">Usado no ponto de equilíbrio</div>
+            </div>
+          </div>
 
-    <!-- ========== CARTÕES ========== -->
-    <section class="view" id="view-cards">
-      <div class="toolbar">
-        <div class="summary-chips" id="cardsSummary"></div>
-        <div class="toolbar-right">
-          <button class="btn-primary" id="btnNewCard">+ Novo cartão</button>
+          <div class="grid-form" style="margin-top:16px;" id="preco-padrao-box">
+            <div class="form-group">
+              <label>Preço de venda inicial (R$)</label>
+              <input type="number" id="pf-preco-inicial" value="0" min="0" step="0.01">
+              <div class="hint">Sugestão: custo unitário × 2</div>
+            </div>
+            <div class="form-group">
+              <label>Impostos padrão (%)</label>
+              <input type="number" id="pf-impostos" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+              <label>Taxa de cartão/Pix (%)</label>
+              <input type="number" id="pf-cartao" value="3" step="0.01" min="0">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
+            <button class="btn btn-primary" onclick="salvarProduto()">💾 Salvar produto</button>
+            <button class="btn btn-ghost" onclick="limparForm()">🧹 Limpar formulário</button>
+          </div>
         </div>
-      </div>
-      <div class="cards-grid" id="cardsGrid"></div>
-    </section>
+
+        <div class="card">
+          <div class="card-title-row">
+            <h3>📦 Produtos cadastrados</h3>
+            <span class="badge badge-teal" id="qtd-produtos">0</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Produto</th><th>UN</th><th class="num">Matéria-prima</th><th class="num">MOD</th>
+                <th class="num">Indiretos</th><th class="num">Custo unitário</th><th class="num">Preço</th><th>Margem</th><th>Ações</th>
+              </tr></thead>
+              <tbody id="tabela-produtos"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PRECIFICAÇÃO ============ -->
+      <section class="panel" id="panel-precificacao">
+        <div class="alert alert-info">
+          💡 <span><b>Defina o preço de venda</b> a partir do custo unitário. O sistema considera impostos, taxas de cartão, comissões, despesas e frete (% sobre a venda) e mostra o <b>lucro real</b>, a <b>margem líquida</b>, o <b>preço mínimo</b> e o <b>ponto de equilíbrio</b>.</span>
+        </div>
+
+        <div class="card">
+          <h3>🏷️ Calcular preço de venda</h3>
+          <div class="grid-form" style="margin-bottom:16px;">
+            <div class="form-group">
+              <label>Produto</label>
+              <select id="pr-produto" onchange="popularSelectPreco()"></select>
+            </div>
+            <div class="form-group">
+              <label>Método de cálculo</label>
+              <select id="pr-metodo" onchange="trocarMetodo()">
+                <option value="markup">Markup (% sobre o custo)</option>
+                <option value="margem">Margem desejada (% do preço)</option>
+                <option value="mercado">Preço de mercado</option>
+                <option value="manual">Preço manual</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label id="pr-valor-lbl">Markup (%)</label>
+              <input type="number" id="pr-valor" value="100" step="0.01" min="0" oninput="atualizarPrecificacao()">
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top:4px;">🧾 Deduções sobre a venda (%)</div>
+          <div class="grid-form">
+            <div class="form-group"><label>Impostos</label><input type="number" id="pr-impostos" step="0.01" min="0" oninput="atualizarPrecificacao()"></div>
+            <div class="form-group"><label>Taxa cartão/Pix</label><input type="number" id="pr-cartao" step="0.01" min="0" oninput="atualizarPrecificacao()"></div>
+            <div class="form-group"><label>Comissões</label><input type="number" id="pr-comissao" step="0.01" min="0" oninput="atualizarPrecificacao()"></div>
+            <div class="form-group"><label>Despesas fixas</label><input type="number" id="pr-despesas" step="0.01" min="0" oninput="atualizarPrecificacao()"></div>
+            <div class="form-group"><label>Frete / outros</label><input type="number" id="pr-frete" step="0.01" min="0" oninput="atualizarPrecificacao()"></div>
+          </div>
+        </div>
+
+        <div id="pr-alerta"></div>
+        <div class="kpi-grid" id="pr-resumo"></div>
+
+        <div class="card" id="pr-detalhe"></div>
+      </section>
+
+      <!-- ============ DRE GERENCIAL ============ -->
+      <section class="panel" id="panel-dre">
+        <div class="alert alert-info">
+          💡 <span><b>DRE Gerencial:</b> projete o resultado por produto informando a quantidade vendida no período. A quantidade fica salva e alimenta o Dashboard.</span>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <h3>📦 Quantidades vendidas (período)</h3>
+            <div class="input-group">
+              <input type="number" id="dre-qtd-aplicar" value="0" min="0" step="1" style="width:120px;" placeholder="Qtd">
+              <button class="btn btn-outline btn-sm" onclick="aplicarQtdTodos()">Aplicar a todos</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Produto</th><th class="num">Preço (R$)</th><th class="num">Custo un. (R$)</th>
+                <th class="num">Qtd vendida</th><th class="num">Receita</th><th class="num">Lucro</th><th>Margem</th>
+              </tr></thead>
+              <tbody id="dre-tabela-qtd"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <h3>📈 DRE Consolidado — <span id="dre-periodo-lbl">Mensal</span></h3>
+            <select id="dre-periodo" style="width:auto;" onchange="atualizarPeriodo()">
+              <option value="Mensal">Mensal</option>
+              <option value="Trimestral">Trimestral</option>
+              <option value="Anual">Anual</option>
+            </select>
+          </div>
+          <div class="kpi-grid" id="dre-kpis" style="margin-bottom:18px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Descrição</th><th class="num">Valor (R$)</th><th class="num">% da receita</th></tr></thead>
+              <tbody id="dre-tabela-cons"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:16px;" class="no-print">
+            <button class="btn btn-primary" onclick="imprimirDRE()">🖨️ Imprimir / PDF do DRE</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TABELA DE PREÇOS ============ -->
+      <section class="panel" id="panel-tabela">
+        <div class="alert alert-info">
+          💡 <span><b>Tabela de preços completa:</b> compare custo, preço sugerido, preço mínimo, markup, margem e lucro de todos os produtos. Exporte em CSV (Excel) ou imprima em PDF para enviar aos clientes.</span>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <h3>📄 Tabela de Preços — <span id="tb-empresa-nome">Minha Empresa</span></h3>
+            <div class="input-group">
+              <button class="btn btn-outline btn-sm" onclick="exportarCSV()">⬇️ Exportar CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="imprimirTabela()">🖨️ Imprimir / PDF</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Produto</th><th>UN</th><th class="num">Custo unit.</th><th class="num">Preço sugerido</th>
+                <th class="num">Preço mínimo</th><th class="num">Markup</th><th class="num">Margem líquida</th>
+                <th class="num">Lucro unit.</th><th>Status</th>
+              </tr></thead>
+              <tbody id="tb-corpo"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ EMPRESA ============ -->
+      <section class="panel" id="panel-empresa">
+        <div class="card">
+          <h3>🏢 Dados da empresa</h3>
+          <div class="grid-form">
+            <div class="form-group"><label>Nome da empresa</label><input type="text" id="emp-nome" placeholder="Minha Empresa"></div>
+            <div class="form-group"><label>Responsável</label><input type="text" id="emp-dono" placeholder="Seu nome"></div>
+            <div class="form-group"><label>Regime tributário</label>
+              <select id="emp-regime">
+                <option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Informal / Sem CNPJ</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Imposto padrão (%)</label><input type="number" id="emp-imposto" value="8" step="0.01" min="0"></div>
+            <div class="form-group"><label>Custos fixos mensais (R$)</label><input type="number" id="emp-fixos" value="0" step="0.01" min="0"></div>
+          </div>
+          <div style="margin-top:16px;">
+            <button class="btn btn-primary" onclick="salvarEmpresa()">💾 Salvar empresa</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>🗄️ Dados e backup</h3>
+          <p style="font-size:.88em;color:var(--slate-500);margin-bottom:14px;">Seus produtos ficam salvos apenas neste navegador (localStorage). Exporte um backup em JSON para guardar ou transferir para outro computador.</p>
+          <div class="grid grid-3">
+            <button class="btn btn-amber" onclick="carregarExemplo()">✨ Carregar dados de exemplo</button>
+            <button class="btn btn-outline" onclick="exportarBackup()">⬇️ Exportar backup (JSON)</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('file-import').click()">⬆️ Importar backup</button>
+            <input type="file" id="file-import" accept=".json,application/json" style="display:none;" onchange="importarBackup(event)">
+          </div>
+        </div>
+
+        <div class="card" style="border-left:4px solid var(--red-600);">
+          <h3>⚠️ Zona de perigo</h3>
+          <p style="font-size:.88em;color:var(--slate-500);margin-bottom:14px;">Apaga todos os produtos e configurações salvos neste navegador.</p>
+          <button class="btn btn-danger" onclick="limparTudo()">🗑️ Apagar todos os dados</button>
+        </div>
+      </section>
+
+      <!-- ============ GUIA ============ -->
+      <section class="panel" id="panel-guia">
+        <div class="hero">
+          <h2>📚 Guia rápido de precificação</h2>
+          <p>Entenda os conceitos usados nesta ferramenta e evite os erros mais comuns de quem precifica na mão.</p>
+        </div>
+
+        <div class="card guide">
+          <h3>1️⃣ Preço de venda não é custo + "chute"</h3>
+          <p>O preço precisa cobrir: <b>custo do produto</b> + <b>deduções sobre a venda</b> (impostos, cartão, comissões, despesas, frete) + <b>lucro desejado</b>. Se você só multiplica o custo por 2, pode estar vendendo no prejuízo sem perceber.</p>
+
+          <h3>2️⃣ Markup × Margem — não confunda</h3>
+          <p><b>Markup</b> é o percentual adicionado <u>sobre o custo</u>. <b>Margem</b> é o percentual de lucro <u>sobre o preço de venda</u>.</p>
+          <div class="formula">Exemplo: custo R$ 10,00 → preço R$ 20,00<br>Markup = <b>100%</b> (R$ 10 sobre o custo)<br>Margem = <b>50%</b> (R$ 10 sobre o preço)</div>
+
+          <h3>3️⃣ Fórmula do preço pela margem</h3>
+          <p>Quando você quer garantir uma margem líquida, use esta fórmula:</p>
+          <div class="formula">Preço = Custo ÷ (1 − <b>deduções%</b> − <b>margem desejada%</b>)</div>
+
+          <h3>4️⃣ Preço mínimo (break-even)</h3>
+          <p>É o menor preço que não dá prejuízo: cobre o custo e as deduções, mas <b>sem lucro</b>. Qualquer preço abaixo dele significa perda em cada venda.</p>
+          <div class="formula">Preço mínimo = Custo ÷ (1 − <b>deduções%</b>)</div>
+
+          <h3>5️⃣ Ponto de equilíbrio (quantidade)</h3>
+          <p>Quantas unidades você precisa vender por mês para cobrir os custos fixos do produto (aluguel rateado, salário fixo etc.):</p>
+          <div class="formula">Qtd. equilíbrio = Custos fixos mensais ÷ <b>margem de contribuição unitária</b><br>Margem de contribuição = Preço − custo variável − deduções</div>
+
+          <h3>6️⃣ Erros mais comuns</h3>
+          <ul>
+            <li>Esquecer taxas de cartão/Pix (2–5% a cada venda);</li>
+            <li>Não contar embalagem, rótulo e frete dos insumos;</li>
+            <li>Não incluir o próprio tempo (mão de obra) no custo;</li>
+            <li>Ignorar perdas e quebras na produção;</li>
+            <li>Copiar o preço do concorrente sem conhecer o próprio custo;</li>
+            <li>Reajustar preço só "quando a inflação apertar" — revise mensalmente.</li>
+          </ul>
+
+          <h3>7️⃣ Dicas práticas</h3>
+          <ul>
+            <li>Use <b>preço psicológico</b>: R$ 19,90 vende mais que R$ 20,00;</li>
+            <li>Monte <b>combos</b> para aumentar o ticket médio;</li>
+            <li>Acompanhe o <b>DRE</b> todo mês — preço certo se confirma no resultado;</li>
+            <li>Tenha preço mínimo definido para <b>promoções e atacado</b>;</li>
+            <li>Reavalie custos quando o preço de insumos mudar (é por isso que a ficha técnica importa).</li>
+          </ul>
+
+          <h3>8️⃣ Impostos no Brasil (referência rápida)</h3>
+          <ul>
+            <li><b>MEI:</b> imposto fixo mensal (DAS), sem % por venda — mas ainda há taxas de cartão;</li>
+            <li><b>Simples Nacional:</b> alíquotas de ~4% a ~19% sobre o faturamento, conforme anexo e faixa;</li>
+            <li><b>Lucro Presumido / Real:</b> PIS, COFINS, ISS/ICMS e IR somam com frequência de 10% a 25%+.</li>
+          </ul>
+          <p style="margin-top:10px;"><i>Confirme a alíquota aplicável ao seu caso com um contador — ela muda conforme o anexo, a receita e o município.</i></p>
+        </div>
+      </section>
+
+    </div>
   </main>
 </div>
 
-<!-- ===== MODAL ===== -->
-<div class="modal-overlay" id="modalOverlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true">
-    <div class="modal-head">
-      <h3 id="modalTitle">Título</h3>
-      <button class="modal-close" id="modalClose" aria-label="Fechar">✕</button>
-    </div>
-    <div class="modal-body" id="modalBody"></div>
-  </div>
-</div>
+<div class="toast" id="toast"></div>
 
-<div class="toast-container" id="toasts"></div>
+<script>
+'use strict';
+/* ============================================================
+   PRECIFICA FÁCIL — aplicação completa de precificação
+   ============================================================ */
 
-<script src="js/app.js"></script>
+const LS_PROD = 'pf_produtos_v1';
+const LS_EMP  = 'pf_empresa_v1';
+
+/* ---------- Estado ---------- */
+let produtos = [];
+let empresa = { nome:'Minha Empresa', dono:'', regime:'Simples Nacional', impostoPadrao:8, custosFixosMensais:0 };
+let editandoId = null;
+
+/* ---------- Utilidades ---------- */
+const BRL = v => (v||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+const NUM = (v,d=2) => (v||0).toLocaleString('pt-BR', { minimumFractionDigits:d, maximumFractionDigits:d });
+const parseN = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const uid = () => Date.now() + Math.floor(Math.random()*10000);
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, tipo='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + tipo;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast', 2600);
+}
+
+function persistir() {
+  localStorage.setItem(LS_PROD, JSON.stringify(produtos));
+  localStorage.setItem(LS_EMP, JSON.stringify(empresa));
+}
+
+function carregar() {
+  try { produtos = JSON.parse(localStorage.getItem(LS_PROD) || '[]'); } catch(e){ produtos = []; }
+  try { empresa = Object.assign({ nome:'Minha Empresa', dono:'', regime:'Simples Nacional', impostoPadrao:8, custosFixosMensais:0 }, JSON.parse(localStorage.getItem(LS_EMP) || '{}')); } catch(e){}
+  // recomputa campos derivados dos produtos antigos
+  produtos.forEach(p => {
+    if (!p.insumos) p.insumos = [];
+    if (!p.metodo) { p.metodo = 'markup'; p.valorMetodo = 100; }
+    calcularProduto(p, true);
+  });
+}
+
+/* ---------- Navegação ---------- */
+const PAGINAS = {
+  dashboard: ['Dashboard','Visão geral do seu negócio'],
+  produtos: ['Produtos & Custos','Ficha técnica e custo unitário'],
+  precificacao: ['Precificação','Markup, margem e ponto de equilíbrio'],
+  dre: ['DRE Gerencial','Resultado projetado por produto e consolidado'],
+  tabela: ['Tabela de Preços','Relatório para clientes e exportação'],
+  empresa: ['Empresa','Configurações, backup e dados de exemplo'],
+  guia: ['Guia de Preços','Aprenda a precificar sem errar']
+};
+
+function irPara(panel) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  const el = document.getElementById('panel-' + panel);
+  if (el) el.classList.add('active');
+  const link = document.querySelector('.nav a[data-panel="' + panel + '"]');
+  if (link) link.classList.add('active');
+  const meta = PAGINAS[panel] || ['', ''];
+  document.getElementById('page-title').textContent = meta[0];
+  document.getElementById('page-sub').textContent = meta[1];
+  window.scrollTo({ top:0 });
+  if (panel === 'dashboard') renderDashboard();
+  if (panel === 'produtos') renderTabelaProdutos();
+  if (panel === 'precificacao') { popularSelectPreco(); atualizarPrecificacao(); }
+  if (panel === 'dre') atualizarTudoDRE();
+  if (panel === 'tabela') renderTabelaPrecos();
+  if (panel === 'empresa') preencherEmpresa();
+}
+
+document.getElementById('nav').addEventListener('click', e => {
+  const a = e.target.closest('a[data-panel]');
+  if (a) { e.preventDefault(); irPara(a.dataset.panel); }
+});
+
+/* ============================================================
+   CÁLCULO DE CUSTO
+   ============================================================ */
+function calcularProduto(p, apenasCusto) {
+  // custos por produção
+  p.custoMP = p.insumos.reduce((s,i) => s + (parseN(i.qtd) * parseN(i.custoUnit)), 0);
+  const modBruto = parseN(p.modHoras) * parseN(p.modCustoHora);
+  p.mod = modBruto * (1 + parseN(p.modEncargos)/100);
+  const indiretos = parseN(p.indiretos) + parseN(p.outros);
+  const perdas = parseN(p.perdas)/100;
+  const custoProducao = (p.custoMP + p.mod + indiretos);
+  p.custoProducao = custoProducao;
+  p.custoComPerdas = perdas < 1 ? custoProducao / (1 - perdas) : custoProducao;
+  p.custoUnit = parseN(p.rendimento) > 0 ? p.custoComPerdas / parseN(p.rendimento) : 0;
+
+  // deduções
+  p.impostos = parseN(p.impostos); p.cartao = parseN(p.cartao); p.comissao = parseN(p.comissao);
+  p.despesas = parseN(p.despesas); p.frete = parseN(p.frete);
+  p.deducoes = p.impostos + p.cartao + p.comissao + p.despesas + p.frete;
+  p.deducoesFrac = p.deducoes/100;
+
+  if (apenasCusto) {
+    p.precoVenda = parseN(p.precoVenda);
+    p.precoMinimo = p.deducoesFrac < 1 ? p.custoUnit / (1 - p.deducoesFrac) : 0;
+    p.lucroUnit = p.precoVenda * (1 - p.deducoesFrac) - p.custoUnit;
+    p.margemLiq = p.precoVenda > 0 ? (p.lucroUnit / p.precoVenda) * 100 : 0;
+    p.markupReal = p.custoUnit > 0 ? ((p.precoVenda / p.custoUnit) - 1) * 100 : 0;
+    p.margemContrib = p.precoVenda * (1 - p.deducoesFrac) - p.custoUnit;
+    p.pontoEquilibrio = p.margemContrib > 0 ? parseN(p.fixosMensais) / p.margemContrib : null;
+  }
+  return p;
+}
+
+/* ============================================================
+   PRODUTOS (FICHA TÉCNICA)
+   ============================================================ */
+let insumoSeq = 0;
+function addInsumo(desc='', unid='UN', qtd='', custoUnit='') {
+  insumoSeq++;
+  const row = document.createElement('div');
+  row.className = 'insumo-row';
+  row.id = 'insumo-' + insumoSeq;
+  row.innerHTML =
+    '<div class="form-group"><label>Descrição</label><input type="text" class="ins-desc" placeholder="Ex: Farinha de trigo" value="' + esc(desc) + '"></div>' +
+    '<div class="form-group"><label>Unid.</label><select class="ins-unid">' +
+      ['UN','KG','G','L','ML','M','CX','PCT'].map(u => '<option' + (u===unid?' selected':'') + '>' + u + '</option>').join('') +
+    '</select></div>' +
+    '<div class="form-group"><label>Quantidade</label><input type="number" class="ins-qtd" step="0.0001" min="0" value="' + qtd + '"></div>' +
+    '<div class="form-group"><label>Custo unit. (R$)</label><input type="number" class="ins-custo" step="0.01" min="0" value="' + custoUnit + '"></div>' +
+    '<div class="form-group"><label>Total</label><input type="text" class="ins-total" readonly value="R$ 0,00"></div>' +
+    '<button class="btn btn-danger btn-sm" title="Remover" onclick="removerInsumo(\'' + row.id + '\')">✕</button>';
+  document.getElementById('pf-insumos').appendChild(row);
+  row.querySelectorAll('.ins-qtd,.ins-custo').forEach(inp => inp.addEventListener('input', () => calcLinhaInsumo(row)));
+  calcLinhaInsumo(row);
+  return row;
+}
+function removerInsumo(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+function calcLinhaInsumo(row) {
+  const total = parseN(row.querySelector('.ins-qtd').value) * parseN(row.querySelector('.ins-custo').value);
+  row.querySelector('.ins-total').value = BRL(total);
+}
+function getInsumosForm() {
+  const lista = [];
+  document.querySelectorAll('#pf-insumos .insumo-row').forEach(row => {
+    const desc = row.querySelector('.ins-desc').value.trim();
+    const qtd = parseN(row.querySelector('.ins-qtd').value);
+    const custoUnit = parseN(row.querySelector('.ins-custo').value);
+    if (desc || qtd > 0 || custoUnit > 0) {
+      lista.push({ desc: desc || '(sem descrição)', unid: row.querySelector('.ins-unid').value, qtd, custoUnit, total: qtd*custoUnit });
+    }
+  });
+  return lista;
+}
+
+function salvarProduto() {
+  const nome = document.getElementById('pf-nome').value.trim();
+  if (!nome) { toast('Informe o nome do produto!', 'error'); document.getElementById('pf-nome').focus(); return; }
+
+  const produto = {
+    id: editandoId || uid(),
+    nome,
+    unidade: document.getElementById('pf-unidade').value,
+    rendimento: parseN(document.getElementById('pf-rendimento').value) || 1,
+    insumos: getInsumosForm(),
+    modHoras: parseN(document.getElementById('pf-mod-horas').value),
+    modCustoHora: parseN(document.getElementById('pf-mod-custo').value),
+    modEncargos: parseN(document.getElementById('pf-mod-encargos').value),
+    indiretos: parseN(document.getElementById('pf-indiretos').value),
+    outros: parseN(document.getElementById('pf-outros').value),
+    perdas: parseN(document.getElementById('pf-perdas').value),
+    fixosMensais: parseN(document.getElementById('pf-fixos').value),
+    impostos: parseN(document.getElementById('pf-impostos').value),
+    cartao: parseN(document.getElementById('pf-cartao').value),
+    comissao: 0, despesas: 0, frete: 0,
+    metodo: 'markup', valorMetodo: 100,
+    qtdVendida: 0
+  };
+
+    if (editandoId) {
+      const idx = produtos.findIndex(p => p.id === editandoId);
+      const antigo = produtos[idx];
+      // preserva precificação e vendas ao editar custos
+      produto.precoVenda = antigo.precoVenda;
+      produto.metodo = antigo.metodo; produto.valorMetodo = antigo.valorMetodo;
+      produto.impostos = antigo.impostos; produto.cartao = antigo.cartao;
+      produto.comissao = antigo.comissao; produto.despesas = antigo.despesas; produto.frete = antigo.frete;
+      produto.qtdVendida = antigo.qtdVendida;
+      produtos[idx] = produto;
+      editandoId = null;
+      toast('Produto atualizado! ✅', 'success');
+    } else {
+      const precoInicial = parseN(document.getElementById('pf-preco-inicial').value);
+      produto.precoVenda = precoInicial > 0 ? precoInicial : 0;
+      produtos.push(produto);
+      toast('Produto salvo! ✅', 'success');
+    }
+    calcularProduto(produto, true);
+  persistir();
+  renderTabelaProdutos();
+  limparForm();
+  atualizarTudo();
+}
+
+function limparForm() {
+  editandoId = null;
+  document.getElementById('form-title').textContent = '📋 Ficha Técnica do Produto';
+  document.getElementById('form-status').style.display = 'none';
+  document.getElementById('pf-nome').value = '';
+  document.getElementById('pf-unidade').value = 'UN';
+  document.getElementById('pf-rendimento').value = 1;
+  document.getElementById('pf-insumos').innerHTML = '';
+  addInsumo();
+  document.getElementById('pf-mod-horas').value = 0;
+  document.getElementById('pf-mod-custo').value = 0;
+  document.getElementById('pf-mod-encargos').value = 0;
+  document.getElementById('pf-indiretos').value = 0;
+  document.getElementById('pf-outros').value = 0;
+  document.getElementById('pf-perdas').value = 0;
+  document.getElementById('pf-fixos').value = 0;
+  document.getElementById('pf-preco-inicial').value = 0;
+  document.getElementById('pf-impostos').value = empresa.impostoPadrao;
+  document.getElementById('pf-cartao').value = 3;
+}
+
+function editarProduto(id) {
+  const p = produtos.find(x => x.id === id);
+  if (!p) return;
+  editandoId = id;
+  document.getElementById('form-title').textContent = '✏️ Editando: ' + p.nome;
+  document.getElementById('form-status').style.display = 'inline-flex';
+  document.getElementById('pf-nome').value = p.nome;
+  document.getElementById('pf-unidade').value = p.unidade;
+  document.getElementById('pf-rendimento').value = p.rendimento;
+  document.getElementById('pf-insumos').innerHTML = '';
+  p.insumos.forEach(i => addInsumo(i.desc, i.unid || 'UN', i.qtd, i.custoUnit));
+  if (p.insumos.length === 0) addInsumo();
+  document.getElementById('pf-mod-horas').value = p.modHoras;
+  document.getElementById('pf-mod-custo').value = p.modCustoHora;
+  document.getElementById('pf-mod-encargos').value = p.modEncargos;
+  document.getElementById('pf-indiretos').value = p.indiretos;
+  document.getElementById('pf-outros').value = p.outros;
+  document.getElementById('pf-perdas').value = p.perdas;
+  document.getElementById('pf-fixos').value = p.fixosMensais;
+  document.getElementById('pf-preco-inicial').value = p.precoVenda;
+  document.getElementById('pf-impostos').value = p.impostos;
+  document.getElementById('pf-cartao').value = p.cartao;
+  irPara('produtos');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function excluirProduto(id) {
+  const p = produtos.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm('Excluir "' + p.nome + '"? Essa ação não pode ser desfeita.')) return;
+  produtos = produtos.filter(x => x.id !== id);
+  persistir();
+  renderTabelaProdutos();
+  atualizarTudo();
+  toast('Produto excluído.', 'success');
+}
+
+function renderTabelaProdutos() {
+  const tbody = document.getElementById('tabela-produtos');
+  document.getElementById('qtd-produtos').textContent = produtos.length + (produtos.length === 1 ? ' produto' : ' produtos');
+  if (produtos.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty"><span class="big">📭</span>Nenhum produto cadastrado ainda.<br>Comece preenchendo a ficha técnica acima.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = produtos.map(p => {
+    const ok = p.margemLiq >= 0;
+    return '<tr>' +
+      '<td><b>' + esc(p.nome) + '</b></td>' +
+      '<td>' + esc(p.unidade) + '</td>' +
+      '<td class="num">' + BRL(p.custoMP) + '</td>' +
+      '<td class="num">' + BRL(p.mod) + '</td>' +
+      '<td class="num">' + BRL(parseN(p.indiretos) + parseN(p.outros)) + '</td>' +
+      '<td class="num"><b>' + BRL(p.custoUnit) + '</b></td>' +
+      '<td class="num">' + BRL(p.precoVenda) + '</td>' +
+      '<td><span class="badge ' + (ok ? 'badge-green' : 'badge-red') + '">' + NUM(p.margemLiq) + '%</span></td>' +
+      '<td><div style="display:flex;gap:6px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="editarProduto(' + p.id + ')">Editar</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="excluirProduto(' + p.id + ')">Excluir</button>' +
+      '</div></td></tr>';
+  }).join('');
+}
+
+/* ============================================================
+   PRECIFICAÇÃO
+   ============================================================ */
+function popularSelectPreco() {
+  const sel = document.getElementById('pr-produto');
+  const atual = sel.value;
+  sel.innerHTML = produtos.length === 0
+    ? '<option value="">— Cadastre um produto primeiro —</option>'
+    : produtos.map(p => '<option value="' + p.id + '">' + esc(p.nome) + ' (custo ' + BRL(p.custoUnit) + ')</option>').join('');
+  if (atual && produtos.find(p => p.id == atual)) sel.value = atual;
+  // pré-preenche método, valor e deduções do produto selecionado
+  const p = produtoSelecionado();
+  if (p) {
+    const metodo = p.metodo || 'markup';
+    document.getElementById('pr-metodo').value = metodo;
+    document.getElementById('pr-valor').value = (metodo === 'mercado' || metodo === 'manual') ? p.precoVenda : p.valorMetodo;
+    document.getElementById('pr-impostos').value = p.impostos;
+    document.getElementById('pr-cartao').value = p.cartao;
+    document.getElementById('pr-comissao').value = p.comissao;
+    document.getElementById('pr-despesas').value = p.despesas;
+    document.getElementById('pr-frete').value = p.frete;
+    trocarMetodo();
+  }
+}
+
+function trocarMetodo() {
+  const metodo = document.getElementById('pr-metodo').value;
+  const lbl = { markup:'Markup (%)', margem:'Margem desejada (%)', mercado:'Preço de mercado (R$)', manual:'Preço de venda (R$)' }[metodo];
+  document.getElementById('pr-valor-lbl').textContent = lbl;
+  const p = produtoSelecionado();
+  if (p && p.valorMetodo) {
+    let v = p.valorMetodo;
+    if (metodo === 'mercado' || metodo === 'manual') v = p.precoVenda;
+    document.getElementById('pr-valor').value = v;
+  }
+  atualizarPrecificacao();
+}
+
+function produtoSelecionado() {
+  const id = parseInt(document.getElementById('pr-produto').value);
+  return produtos.find(x => x.id === id);
+}
+
+function atualizarPrecificacao() {
+  const p = produtoSelecionado();
+  const divResumo = document.getElementById('pr-resumo');
+  const divAlerta = document.getElementById('pr-alerta');
+  const divDet = document.getElementById('pr-detalhe');
+
+  if (!p) {
+    divResumo.innerHTML = '<div class="card" style="grid-column:1/-1;"><div class="empty"><span class="big">🏷️</span>Selecione um produto para calcular o preço.</div></div>';
+    divAlerta.innerHTML = ''; divDet.innerHTML = '';
+    return;
+  }
+
+  const metodo = document.getElementById('pr-metodo').value;
+  const valor = parseN(document.getElementById('pr-valor').value);
+  const deducoes = parseN(document.getElementById('pr-impostos').value) + parseN(document.getElementById('pr-cartao').value) +
+                   parseN(document.getElementById('pr-comissao').value) + parseN(document.getElementById('pr-despesas').value) +
+                   parseN(document.getElementById('pr-frete').value);
+
+  let preco = 0, erro = '';
+  if (metodo === 'markup') {
+    preco = p.custoUnit * (1 + valor/100);
+  } else if (metodo === 'margem') {
+    const divisor = 1 - (deducoes + valor)/100;
+    if (divisor <= 0) { erro = '⚠️ Margem + deduções devem somar menos de 100%. Reduza a margem ou as deduções.'; preco = 0; }
+    else preco = p.custoUnit / divisor;
+  } else {
+    preco = valor;
+  }
+
+  // grava no produto
+  p.metodo = metodo; p.valorMetodo = valor;
+  p.impostos = parseN(document.getElementById('pr-impostos').value);
+  p.cartao = parseN(document.getElementById('pr-cartao').value);
+  p.comissao = parseN(document.getElementById('pr-comissao').value);
+  p.despesas = parseN(document.getElementById('pr-despesas').value);
+  p.frete = parseN(document.getElementById('pr-frete').value);
+  p.precoVenda = preco;
+  calcularProduto(p, true);
+  persistir();
+
+  const abaixo = p.precoVenda > 0 && p.precoMinimo > 0 && p.precoVenda < p.precoMinimo;
+  if (erro) divAlerta.innerHTML = '<div class="alert alert-danger">' + erro + '</div>';
+  else if (abaixo) divAlerta.innerHTML = '<div class="alert alert-warn">⚠️ <span>Este preço está <b>abaixo do preço mínimo</b> (' + BRL(p.precoMinimo) + '). Cada venda gera prejuízo!</span></div>';
+  else if (p.deducoes >= 100) divAlerta.innerHTML = '<div class="alert alert-danger">⚠️ <span>Deduções totais de ' + NUM(p.deducoes) + '% — impossível ter lucro com deduções ≥ 100%.</span></div>';
+  else divAlerta.innerHTML = '<div class="alert alert-success">✅ <span>Preço calculado: <b>' + BRL(p.precoVenda) + '</b> por ' + esc(p.unidade) + '.</span></div>';
+
+  divResumo.innerHTML =
+    '<div class="kpi"><div class="k-label">Custo unitário</div><div class="k-value">' + BRL(p.custoUnit) + '</div><div class="k-sub">com perdas e indiretos</div></div>' +
+    '<div class="kpi amber"><div class="k-label">Preço de venda</div><div class="k-value">' + BRL(p.precoVenda) + '</div><div class="k-sub">por ' + esc(p.unidade) + '</div></div>' +
+    '<div class="kpi red"><div class="k-label">Preço mínimo</div><div class="k-value">' + BRL(p.precoMinimo) + '</div><div class="k-sub">sem lucro (break-even)</div></div>' +
+    '<div class="kpi ' + (p.lucroUnit >= 0 ? 'green' : 'red') + '"><div class="k-label">Lucro unitário</div><div class="k-value ' + (p.lucroUnit >= 0 ? 'pos' : 'neg') + '">' + BRL(p.lucroUnit) + '</div><div class="k-sub">após todas as deduções</div></div>' +
+    '<div class="kpi ' + (p.margemLiq >= 0 ? 'green' : 'red') + '"><div class="k-label">Margem líquida</div><div class="k-value ' + (p.margemLiq >= 0 ? 'pos' : 'neg') + '">' + NUM(p.margemLiq) + '%</div><div class="k-sub">sobre o preço</div></div>' +
+    '<div class="kpi"><div class="k-label">Markup real</div><div class="k-value">' + NUM(p.markupReal) + '%</div><div class="k-sub">sobre o custo</div></div>';
+
+  let peHtml;
+  if (p.pontoEquilibrio === null) peHtml = '<div class="empty" style="padding:16px;">Com margem de contribuição negativa não há ponto de equilíbrio — o produto nunca cobre os custos fixos.</div>';
+  else peHtml = '<p style="font-size:.9em;color:var(--slate-600);line-height:1.6;">Vendendo <b>' + Math.ceil(p.pontoEquilibrio) + ' ' + esc(p.unidade) + '/mês</b>, este produto cobre os custos fixos de <b>' + BRL(p.fixosMensais) + '</b>. Acima disso, cada venda gera <b>' + BRL(p.margemContrib) + '</b> de contribuição.</p>';
+
+  divDet.innerHTML =
+    '<h3>🔍 Detalhamento da conta</h3>' +
+    '<div class="table-wrap"><table>' +
+    '<thead><tr><th>Item</th><th class="num">Valor (R$)</th><th class="num">% do preço</th></tr></thead><tbody>' +
+    '<tr><td>Preço de venda</td><td class="num">' + BRL(p.precoVenda) + '</td><td class="num">100,00%</td></tr>' +
+    '<tr><td>Impostos (' + NUM(p.impostos) + '%)</td><td class="num">− ' + BRL(p.precoVenda * p.impostos/100) + '</td><td class="num">' + NUM(p.impostos) + '%</td></tr>' +
+    '<tr><td>Cartão/Pix (' + NUM(p.cartao) + '%)</td><td class="num">− ' + BRL(p.precoVenda * p.cartao/100) + '</td><td class="num">' + NUM(p.cartao) + '%</td></tr>' +
+    '<tr><td>Comissões (' + NUM(p.comissao) + '%)</td><td class="num">− ' + BRL(p.precoVenda * p.comissao/100) + '</td><td class="num">' + NUM(p.comissao) + '%</td></tr>' +
+    '<tr><td>Despesas (' + NUM(p.despesas) + '%)</td><td class="num">− ' + BRL(p.precoVenda * p.despesas/100) + '</td><td class="num">' + NUM(p.despesas) + '%</td></tr>' +
+    '<tr><td>Frete/outros (' + NUM(p.frete) + '%)</td><td class="num">− ' + BRL(p.precoVenda * p.frete/100) + '</td><td class="num">' + NUM(p.frete) + '%</td></tr>' +
+    '<tr class="row-total"><td>Receita líquida</td><td class="num">' + BRL(p.precoVenda * (1 - p.deducoesFrac)) + '</td><td class="num">' + NUM(100 - p.deducoes) + '%</td></tr>' +
+    '<tr><td>Custo unitário</td><td class="num">− ' + BRL(p.custoUnit) + '</td><td class="num">' + NUM(p.custoUnit > 0 ? p.custoUnit/p.precoVenda*100 : 0) + '%</td></tr>' +
+    '<tr class="' + (p.lucroUnit >= 0 ? 'row-lucro' : 'row-prejuizo') + '"><td>' + (p.lucroUnit >= 0 ? 'LUCRO LÍQUIDO' : 'PREJUÍZO') + '</td><td class="num">' + BRL(p.lucroUnit) + '</td><td class="num">' + NUM(p.margemLiq) + '%</td></tr>' +
+    '</tbody></table></div>' +
+    '<div class="card" style="margin-top:16px;background:var(--slate-50);"><h3 style="margin-bottom:8px;">⚖️ Ponto de equilíbrio</h3>' + peHtml + '</div>';
+}
+
+/* ============================================================
+   DRE GERENCIAL
+   ============================================================ */
+function atualizarQtdProduto(id, val) {
+  const p = produtos.find(x => x.id === id);
+  if (p) { p.qtdVendida = parseN(val); persistir(); atualizarTudoDRE(); renderDashboard(); }
+}
+
+function aplicarQtdTodos() {
+  const q = parseN(document.getElementById('dre-qtd-aplicar').value);
+  produtos.forEach(p => p.qtdVendida = q);
+  persistir();
+  atualizarTudoDRE();
+  renderDashboard();
+  toast('Quantidade aplicada a todos os produtos.', 'success');
+}
+
+function atualizarPeriodo() {
+  document.getElementById('dre-periodo-lbl').textContent = document.getElementById('dre-periodo').value;
+  atualizarTudoDRE();
+}
+
+function atualizarTudoDRE() {
+  renderDREQtd();
+  renderDREConsolidado();
+}
+
+function renderDREQtd() {
+  const tbody = document.getElementById('dre-tabela-qtd');
+  if (produtos.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><span class="big">📭</span>Cadastre produtos para montar o DRE.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = produtos.map(p => {
+    const rec = p.precoVenda * p.qtdVendida;
+    const luc = p.lucroUnit * p.qtdVendida;
+    return '<tr>' +
+      '<td><b>' + esc(p.nome) + '</b></td>' +
+      '<td class="num">' + BRL(p.precoVenda) + '</td>' +
+      '<td class="num">' + BRL(p.custoUnit) + '</td>' +
+      '<td class="num" style="width:120px;"><input type="number" style="width:100px;padding:6px 8px;" min="0" step="1" value="' + p.qtdVendida + '" onchange="atualizarQtdProduto(' + p.id + ', this.value)"></td>' +
+      '<td class="num">' + BRL(rec) + '</td>' +
+      '<td class="num ' + (luc >= 0 ? 'pos' : 'neg') + '">' + BRL(luc) + '</td>' +
+      '<td><span class="badge ' + (p.margemLiq >= 0 ? 'badge-green' : 'badge-red') + '">' + NUM(p.margemLiq) + '%</span></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderDREConsolidado() {
+  const tbody = document.getElementById('dre-tabela-cons');
+  const kpiDiv = document.getElementById('dre-kpis');
+  if (produtos.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3"><div class="empty">Sem produtos para consolidar.</div></td></tr>';
+    kpiDiv.innerHTML = '';
+    return;
+  }
+  let receita = 0, receitaLiq = 0, cmv = 0, imp = 0, cartao = 0, com = 0, desp = 0, frete = 0, lucro = 0, margemPond = 0;
+  produtos.forEach(p => {
+    const r = p.precoVenda * p.qtdVendida;
+    receita += r;
+    imp += r * p.impostos/100;
+    cartao += r * p.cartao/100;
+    com += r * p.comissao/100;
+    desp += r * p.despesas/100;
+    frete += r * p.frete/100;
+    cmv += p.custoUnit * p.qtdVendida;
+  });
+  receitaLiq = receita - imp - cartao - com - desp - frete;
+  lucro = receitaLiq - cmv;
+  const pct = v => receita > 0 ? NUM(v/receita*100) + '%' : '—';
+
+  tbody.innerHTML =
+    '<tr class="row-total"><td>Receita bruta</td><td class="num">' + BRL(receita) + '</td><td class="num">100,00%</td></tr>' +
+    '<tr><td>Impostos</td><td class="num">− ' + BRL(imp) + '</td><td class="num">' + pct(imp) + '</td></tr>' +
+    '<tr><td>Taxas cartão/Pix</td><td class="num">− ' + BRL(cartao) + '</td><td class="num">' + pct(cartao) + '</td></tr>' +
+    '<tr><td>Comissões</td><td class="num">− ' + BRL(com) + '</td><td class="num">' + pct(com) + '</td></tr>' +
+    '<tr><td>Despesas fixas (%)</td><td class="num">− ' + BRL(desp) + '</td><td class="num">' + pct(desp) + '</td></tr>' +
+    '<tr><td>Frete / outros</td><td class="num">− ' + BRL(frete) + '</td><td class="num">' + pct(frete) + '</td></tr>' +
+    '<tr class="row-total"><td>Receita líquida</td><td class="num">' + BRL(receitaLiq) + '</td><td class="num">' + pct(receitaLiq) + '</td></tr>' +
+    '<tr><td>CMV (custo dos produtos vendidos)</td><td class="num">− ' + BRL(cmv) + '</td><td class="num">' + pct(cmv) + '</td></tr>' +
+    '<tr class="' + (lucro >= 0 ? 'row-lucro' : 'row-prejuizo') + '"><td>' + (lucro >= 0 ? 'LUCRO LÍQUIDO' : 'PREJUÍZO') + '</td><td class="num">' + BRL(lucro) + '</td><td class="num">' + pct(lucro) + '</td></tr>';
+
+  kpiDiv.innerHTML =
+    '<div class="kpi amber"><div class="k-label">Faturamento</div><div class="k-value">' + BRL(receita) + '</div><div class="k-sub">bruto no período</div></div>' +
+    '<div class="kpi"><div class="k-label">Receita líquida</div><div class="k-value">' + BRL(receitaLiq) + '</div><div class="k-sub">após deduções</div></div>' +
+    '<div class="kpi red"><div class="k-label">CMV</div><div class="k-value">' + BRL(cmv) + '</div><div class="k-sub">custo dos produtos</div></div>' +
+    '<div class="kpi ' + (lucro >= 0 ? 'green' : 'red') + '"><div class="k-label">Resultado</div><div class="k-value ' + (lucro >= 0 ? 'pos' : 'neg') + '">' + BRL(lucro) + '</div><div class="k-sub">' + pct(lucro) + ' da receita</div></div>';
+}
+
+/* ============================================================
+   TABELA DE PREÇOS
+   ============================================================ */
+function renderTabelaPrecos() {
+  document.getElementById('tb-empresa-nome').textContent = empresa.nome;
+  const tbody = document.getElementById('tb-corpo');
+  if (produtos.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty"><span class="big">📭</span>Nenhum produto cadastrado.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = produtos.map(p => {
+    const ok = p.margemLiq >= 0;
+    const abaixo = p.precoVenda > 0 && p.precoMinimo > 0 && p.precoVenda < p.precoMinimo;
+    const status = abaixo
+      ? '<span class="badge badge-red">⚠️ Abaixo do mínimo</span>'
+      : (ok ? '<span class="badge badge-green">✅ Saudável</span>' : '<span class="badge badge-red">Sem lucro</span>');
+    return '<tr>' +
+      '<td><b>' + esc(p.nome) + '</b></td>' +
+      '<td>' + esc(p.unidade) + '</td>' +
+      '<td class="num">' + BRL(p.custoUnit) + '</td>' +
+      '<td class="num"><b>' + BRL(p.precoVenda) + '</b></td>' +
+      '<td class="num">' + BRL(p.precoMinimo) + '</td>' +
+      '<td class="num">' + NUM(p.markupReal) + '%</td>' +
+      '<td class="num ' + (ok ? 'pos' : 'neg') + '">' + NUM(p.margemLiq) + '%</td>' +
+      '<td class="num ' + (ok ? 'pos' : 'neg') + '">' + BRL(p.lucroUnit) + '</td>' +
+      '<td>' + status + '</td></tr>';
+  }).join('');
+}
+
+function baixarArquivo(nome, conteudo, mime) {
+  const a = document.createElement('a');
+  a.download = nome;
+  if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+    a.href = URL.createObjectURL(new Blob([conteudo], { type: mime + ';charset=utf-8;' }));
+  } else {
+    a.href = 'data:' + mime + ';charset=utf-8,' + encodeURIComponent(conteudo);
+  }
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { if (a.href.startsWith('blob:')) URL.revokeObjectURL(a.href); a.remove(); }, 300);
+}
+
+function exportarCSV() {
+  if (produtos.length === 0) { toast('Nenhum produto para exportar.', 'error'); return; }
+  const sep = ';';
+  const linha = arr => arr.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(sep);
+  let csv = '\uFEFF' + linha(['Produto','Unidade','Custo unitario','Preco venda','Preco minimo','Markup %','Margem liquida %','Lucro unitario']) + '\n';
+  produtos.forEach(p => {
+    csv += linha([p.nome, p.unidade, p.custoUnit.toFixed(2).replace('.',','), p.precoVenda.toFixed(2).replace('.',','), p.precoMinimo.toFixed(2).replace('.',','), p.markupReal.toFixed(2).replace('.',','), p.margemLiq.toFixed(2).replace('.',','), p.lucroUnit.toFixed(2).replace('.',',')]) + '\n';
+  });
+  baixarArquivo('tabela-de-precos-' + empresa.nome.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '.csv', csv, 'text/csv');
+  toast('CSV exportado! ⬇️', 'success');
+}
+
+/* ============================================================
+   IMPRESSÃO / PDF
+   ============================================================ */
+function imprimirHTML(titulo, subtitulo, html) {
+  const root = document.getElementById('print-root');
+  root.innerHTML =
+    '<h1>' + esc(titulo) + '</h1>' +
+    '<div class="p-sub">' + esc(subtitulo) + ' — gerado em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) + '</div>' +
+    html;
+  document.body.classList.add('printing');
+  setTimeout(() => window.print(), 60);
+}
+window.addEventListener('afterprint', () => document.body.classList.remove('printing'));
+
+function imprimirTabela() {
+  if (produtos.length === 0) { toast('Nenhum produto para imprimir.', 'error'); return; }
+  const linhas = produtos.map(p => {
+    const status = p.margemLiq >= 0 ? 'OK' : 'SEM LUCRO';
+    return '<tr><td>' + esc(p.nome) + '</td><td>' + esc(p.unidade) + '</td><td class="num">' + BRL(p.custoUnit) + '</td><td class="num">' + BRL(p.precoVenda) + '</td><td class="num">' + NUM(p.margemLiq) + '%</td><td class="num">' + BRL(p.lucroUnit) + '</td><td>' + status + '</td></tr>';
+  }).join('');
+  imprimirHTML('Tabela de Preços — ' + empresa.nome, 'Preços sugeridos para clientes', 
+    '<table><thead><tr><th>Produto</th><th>Un.</th><th class="num">Custo</th><th class="num">Preço</th><th class="num">Margem</th><th class="num">Lucro</th><th>Status</th></tr></thead><tbody>' + linhas + '</tbody></table>');
+}
+
+function imprimirDRE() {
+  if (produtos.length === 0) { toast('Cadastre produtos para imprimir o DRE.', 'error'); return; }
+  const periodo = document.getElementById('dre-periodo').value;
+  // tabela por produto
+  let rows = '';
+  let recTotal = 0, lucTotal = 0;
+  produtos.forEach(p => {
+    const rec = p.precoVenda * p.qtdVendida, luc = p.lucroUnit * p.qtdVendida;
+    recTotal += rec; lucTotal += luc;
+    rows += '<tr><td>' + esc(p.nome) + '</td><td class="num">' + NUM(p.qtdVendida) + '</td><td class="num">' + BRL(p.precoVenda) + '</td><td class="num">' + BRL(rec) + '</td><td class="num">' + BRL(p.custoUnit * p.qtdVendida) + '</td><td class="num">' + BRL(luc) + '</td><td class="num">' + NUM(p.margemLiq) + '%</td></tr>';
+  });
+  rows += '<tr class="row-total"><td colspan="3">TOTAL</td><td class="num">' + BRL(recTotal) + '</td><td></td><td class="num">' + BRL(lucTotal) + '</td><td class="num">' + (recTotal>0 ? NUM(lucTotal/recTotal*100) : '0,00') + '%</td></tr>';
+  imprimirHTML('DRE Gerencial — ' + empresa.nome, 'Período: ' + periodo,
+    '<h3 style="font-size:1em;margin:14px 0 6px;">Resultado por produto</h3>' +
+    '<table><thead><tr><th>Produto</th><th class="num">Qtd</th><th class="num">Preço</th><th class="num">Receita</th><th class="num">CMV</th><th class="num">Resultado</th><th class="num">Margem</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<h3 style="font-size:1em;margin:14px 0 6px;">Consolidado</h3>' + document.getElementById('dre-tabela-cons').outerHTML);
+}
+
+function imprimirPainelAtual() {
+  const ativo = document.querySelector('.panel.active');
+  const id = ativo ? ativo.id.replace('panel-','') : 'dashboard';
+  if (id === 'tabela') return imprimirTabela();
+  if (id === 'dre') return imprimirDRE();
+  if (id === 'produtos') {
+    if (produtos.length === 0) { toast('Nenhum produto cadastrado.', 'error'); return; }
+    const linhas = produtos.map(p => '<tr><td>' + esc(p.nome) + '</td><td>' + esc(p.unidade) + '</td><td class="num">' + BRL(p.custoMP) + '</td><td class="num">' + BRL(p.mod) + '</td><td class="num">' + BRL(parseN(p.indiretos)+parseN(p.outros)) + '</td><td class="num">' + BRL(p.custoUnit) + '</td></tr>').join('');
+    imprimirHTML('Ficha de Custos — ' + empresa.nome, 'Custo unitário por produto',
+      '<table><thead><tr><th>Produto</th><th>Un.</th><th class="num">Matéria-prima</th><th class="num">MOD</th><th class="num">Indiretos</th><th class="num">Custo unit.</th></tr></thead><tbody>' + linhas + '</tbody></table>');
+  } else {
+    toast('Use o botão específico de impressão de cada relatório.', '');
+  }
+}
+
+/* ============================================================
+   EMPRESA / BACKUP
+   ============================================================ */
+function preencherEmpresa() {
+  document.getElementById('emp-nome').value = empresa.nome;
+  document.getElementById('emp-dono').value = empresa.dono;
+  document.getElementById('emp-regime').value = empresa.regime;
+  document.getElementById('emp-imposto').value = empresa.impostoPadrao;
+  document.getElementById('emp-fixos').value = empresa.custosFixosMensais;
+}
+
+function salvarEmpresa() {
+  empresa.nome = document.getElementById('emp-nome').value.trim() || 'Minha Empresa';
+  empresa.dono = document.getElementById('emp-dono').value.trim();
+  empresa.regime = document.getElementById('emp-regime').value;
+  empresa.impostoPadrao = parseN(document.getElementById('emp-imposto').value);
+  empresa.custosFixosMensais = parseN(document.getElementById('emp-fixos').value);
+  persistir();
+  renderTabelaPrecos();
+  toast('Dados da empresa salvos! ✅', 'success');
+}
+
+function exportarBackup() {
+  const dados = { versao:1, exportadoEm:new Date().toISOString(), empresa, produtos };
+  baixarArquivo('backup-precifica-facil.json', JSON.stringify(dados, null, 2), 'application/json');
+  toast('Backup exportado! ⬇️', 'success');
+}
+
+function importarBackup(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const dados = JSON.parse(reader.result);
+      if (!Array.isArray(dados.produtos)) throw new Error('formato');
+      produtos = dados.produtos;
+      if (dados.empresa) empresa = Object.assign(empresa, dados.empresa);
+      persistir(); carregar();
+      atualizarTudo();
+      toast('Backup importado com sucesso! ✅', 'success');
+    } catch(e) {
+      toast('Arquivo de backup inválido.', 'error');
+    }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function carregarExemplo(confirmar) {
+  if (confirmar && produtos.length > 0 && !confirm('Substituir os dados atuais pelos dados de exemplo?')) return;
+  produtos = gerarExemplo();
+  empresa.nome = 'Doces da Ana';
+  empresa.dono = 'Ana Souza';
+  empresa.regime = 'MEI';
+  empresa.impostoPadrao = 6;
+  empresa.custosFixosMensais = 1200;
+  persistir(); carregar();
+  atualizarTudo();
+  preencherEmpresa();
+  toast('Dados de exemplo carregados! ✨', 'success');
+}
+
+function limparTudo() {
+  if (!confirm('Apagar TODOS os dados (produtos, preços e configurações)? Esta ação é definitiva.')) return;
+  produtos = [];
+  empresa = { nome:'Minha Empresa', dono:'', regime:'Simples Nacional', impostoPadrao:8, custosFixosMensais:0 };
+  persistir(); atualizarTudo(); preencherEmpresa();
+  toast('Todos os dados foram apagados.', 'success');
+}
+
+function gerarExemplo() {
+  const mk = (nome, unidade, rendimento, insumos, modHoras, modCustoHora, modEncargos, indiretos, outros, perdas, fixos, preco, impostos, cartao, qtd) => ({
+    id: uid(), nome, unidade, rendimento,
+    insumos: insumos.map(i => ({ desc:i[0], unid:i[1], qtd:i[2], custoUnit:i[3], total:i[2]*i[3] })),
+    modHoras, modCustoHora, modEncargos, indiretos, outros, perdas, fixosMensais: fixos,
+    impostos, cartao, comissao:0, despesas:0, frete:0,
+    metodo:'markup', valorMetodo: ((preco / (( (insumos.reduce((s,i)=>s+i[2]*i[3],0) + modHoras*modCustoHora*(1+modEncargos/100) + indiretos + outros) / (1-perdas/100) ) / rendimento)) - 1) * 100,
+    precoVenda: preco,
+    qtdVendida: qtd
+  });
+  return [
+    mk('Bolo de Chocolate', 'UN', 12,
+      [['Farinha de trigo','KG',0.5,6.00],['Chocolate em pó','KG',0.25,22.00],['Ovos','UN',6,0.80],['Açúcar','KG',0.5,5.00],['Manteiga','KG',0.2,36.00],['Leite','L',0.5,5.50],['Fermento','UN',1,1.50],['Embalagem','UN',12,0.80]],
+      1.5, 25, 20, 5, 0, 3, 350, 24.90, 6, 3, 120),
+    mk('Bolo de Cenoura', 'UN', 10,
+      [['Cenoura','KG',0.6,5.00],['Farinha de trigo','KG',0.5,6.00],['Açúcar','KG',0.4,5.00],['Ovos','UN',4,0.80],['Óleo','ML',200,0.008],['Cobertura de chocolate','G',300,0.05],['Embalagem','UN',10,0.80]],
+      1.2, 25, 20, 4, 0, 3, 300, 19.90, 6, 3, 140),
+    mk('Pão Artesanal', 'UN', 20,
+      [['Farinha','KG',1,8.00],['Fermento natural','G',200,0.06],['Sal','KG',0.02,10.00],['Azeite','ML',50,0.06],['Embalagem','UN',20,0.30]],
+      1.5, 30, 20, 6, 0, 2, 400, 12.90, 6, 3, 200),
+    mk('Suco Natural (300ml)', 'UN', 30,
+      [['Frutas da estação','KG',3,9.00],['Água','L',1,0.00],['Garrafa PET','UN',30,0.55],['Rótulo','UN',30,0.12]],
+      0.8, 20, 20, 3, 0, 2, 150, 8.90, 6, 3, 260),
+    mk('Brigadeiro Gourmet', 'UN', 40,
+      [['Leite condensado','UN',4,7.50],['Chocolate 50%','KG',0.4,45.00],['Granulado','KG',0.2,28.00],['Manteiga','KG',0.1,36.00],['Forminha','UN',40,0.08]],
+      2, 22, 20, 5, 0, 2, 220, 4.90, 6, 3, 500)
+  ];
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function renderDashboard() {
+  document.getElementById('kpi-produtos').textContent = produtos.length;
+  let rec = 0, cmv = 0, luc = 0, pesoMargem = 0;
+  produtos.forEach(p => {
+    const r = p.precoVenda * p.qtdVendida;
+    rec += r; cmv += p.custoUnit * p.qtdVendida;
+    luc += p.lucroUnit * p.qtdVendida;
+  });
+  const margem = rec > 0 ? (luc/rec)*100 : 0;
+  document.getElementById('kpi-faturamento').textContent = BRL(rec);
+  document.getElementById('kpi-custo').textContent = BRL(cmv);
+  const lucEl = document.getElementById('kpi-lucro');
+  lucEl.textContent = BRL(luc);
+  lucEl.className = 'k-value ' + (luc >= 0 ? 'pos' : 'neg');
+  const margEl = document.getElementById('kpi-margem');
+  margEl.textContent = NUM(margem) + '%';
+  margEl.className = 'k-value ' + (margem >= 0 ? 'pos' : 'neg');
+
+  // gráfico de mix
+  const chart = document.getElementById('chart-mix');
+  if (produtos.length === 0) {
+    chart.innerHTML = '<div class="empty"><span class="big">📊</span>Cadastre produtos para ver o mix de receita.</div>';
+  } else {
+    const max = Math.max(...produtos.map(p => p.precoVenda * p.qtdVendida), 1);
+    chart.innerHTML = produtos.slice().sort((a,b) => (b.precoVenda*b.qtdVendida) - (a.precoVenda*a.qtdVendida)).map(p => {
+      const r = p.precoVenda * p.qtdVendida;
+      const w = Math.max((r/max)*100, 1.5);
+      const ok = p.margemLiq >= 0;
+      return '<div class="bar-row">' +
+        '<div class="bar-top"><span><b>' + esc(p.nome) + '</b> <small style="color:var(--slate-400);">' + esc(p.unidade) + '</small></span><span>' + BRL(r) + ' · margem ' + NUM(p.margemLiq) + '%</span></div>' +
+        '<div class="bar-track"><div class="bar-fill ' + (ok ? '' : 'warn') + '" style="width:' + w + '%;"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // destaques
+  const dest = document.getElementById('destaques');
+  if (produtos.length === 0) {
+    dest.innerHTML = '<div class="empty"><span class="big">🏆</span>Sem produtos ainda.</div>';
+  } else {
+    const porLucro = produtos.slice().sort((a,b) => (b.lucroUnit*b.qtdVendida) - (a.lucroUnit*a.qtdVendida))[0];
+    const porMargem = produtos.slice().sort((a,b) => b.margemLiq - a.margemLiq)[0];
+    const risco = produtos.filter(p => p.margemLiq < 0);
+    dest.innerHTML =
+      '<div class="alert alert-success" style="margin-bottom:10px;"><b>🥇 Mais lucrativo:</b> ' + esc(porLucro.nome) + ' — ' + BRL(porLucro.lucroUnit * porLucro.qtdVendida) + ' no período</div>' +
+      '<div class="alert alert-info" style="margin-bottom:10px;"><b>📈 Maior margem:</b> ' + esc(porMargem.nome) + ' — ' + NUM(porMargem.margemLiq) + '% de margem líquida</div>' +
+      (risco.length > 0
+        ? '<div class="alert alert-danger"><b>🚨 Atenção:</b> ' + risco.length + ' produto(s) com margem negativa (' + risco.map(r => esc(r.nome)).join(', ') + '). Revise os preços.</div>'
+        : '<div class="alert alert-success"><b>✅ Nenhum produto com prejuízo.</b> Continue monitorando as margens.</div>');
+  }
+}
+
+/* ============================================================
+   ATUALIZAÇÃO GLOBAL / INIT
+   ============================================================ */
+function atualizarTudo() {
+  renderDashboard();
+  renderTabelaProdutos();
+  popularSelectPreco();
+  atualizarPrecificacao();
+  atualizarTudoDRE();
+  renderTabelaPrecos();
+  preencherEmpresa();
+}
+
+// entrada para pf-qtd-vendida não existe no HTML; garante segurança
+document.addEventListener('DOMContentLoaded', () => {});
+
+// init
+carregar();
+addInsumo();
+limparForm();
+atualizarTudo();
+</script>
 </body>
 </html>
