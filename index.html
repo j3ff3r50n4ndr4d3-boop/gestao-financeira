@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ÉLAN · Moda Feminina Essencial</title>
+<meta name="description" content="Moda feminina atemporal com tecidos nobres e caimento perfeito. Frete grátis acima de R$ 299, 12x sem juros e primeira troca grátis.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤍</text></svg>">
+</head>
+<body>
+
+<!-- ══════════════ BARRA DE ANÚNCIO + HEADER ══════════════ -->
+<div class="sticky-top">
+<div class="announce" id="announce">
+  <p>
+    <span class="announce-dot"></span>
+    <strong>OFERTA DE LANÇAMENTO</strong> · 10% OFF com o cupom <strong>BEMVINDA10</strong> · Frete grátis acima de R$ 299 · Termina em <strong id="bar-countdown">00:00:00</strong>
+  </p>
+</div>
+
+<header class="header" id="header">
+  <div class="container header-inner">
+    <nav class="nav-left" aria-label="Navegação principal">
+      <a href="#novidades" class="nav-link">Novidades</a>
+      <a href="#colecao" class="nav-link">Coleção</a>
+      <a href="#depoimentos" class="nav-link">Clientes</a>
+    </nav>
+    <a href="#" class="logo" aria-label="ÉLAN — página inicial">ÉLAN<span>.</span></a>
+    <div class="nav-right">
+      <button class="icon-btn" id="btn-cart" aria-label="Abrir sacola de compras">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 7h12l1.5 13.5a1 1 0 0 1-1 1.1H5.5a1 1 0 0 1-1-1.1L6 7Z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg>
+        <span class="cart-badge" id="cart-count" hidden>0</span>
+      </button>
+    </div>
+  </div>
+</header>
+</div>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <p class="eyebrow">Nova coleção · Primavera 26</p>
+      <h1>Elegância que<br><em>se veste de você</em></h1>
+      <p class="hero-sub">Peças atemporais, tecidos nobres e caimento perfeito. O essencial do guarda-roupa feminino, desenhado para durar.</p>
+      <div class="hero-ctas">
+        <a href="#novidades" class="btn btn-primary btn-lg">Comprar agora</a>
+        <a href="#colecao" class="btn btn-ghost btn-lg">Ver coleção</a>
+      </div>
+      <div class="hero-proof">
+        <span class="stars" aria-hidden="true">★★★★★</span>
+        <span><strong>4,9/5</strong> · +12.000 clientes satisfeitas</span>
+      </div>
+    </div>
+    <div class="hero-media">
+      <img src="assets/img/hero.jpg" alt="Modelo vestindo vestido longo de seda champanhe" fetchpriority="high">
+      <div class="hero-card">
+        <span class="hero-card-label">Mais desejado</span>
+        <strong>Vestido Lune</strong>
+        <a href="#" data-open-product="vestido-lune">Ver peça →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ BENEFÍCIOS ══════════════ -->
+<section class="benefits">
+  <div class="container benefits-grid">
+    <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7"/><circle cx="7" cy="17" r="2"/><circle cx="17.5" cy="17" r="2"/></svg><div><strong>Frete grátis</strong><span>em compras acima de R$ 299</span></div></div>
+    <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9l8-5 8 5v6l-8 5-8-5z"/><path d="M4 9l8 5 8-5M12 14v6"/></svg><div><strong>Primeira troca grátis</strong><span>até 30 dias após a compra</span></div></div>
+    <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg><div><strong>Até 12x sem juros</strong><span>ou 5% OFF no PIX</span></div></div>
+    <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg><div><strong>Compra 100% segura</strong><span>dados criptografados</span></div></div>
+  </div>
+</section>
+
+<!-- ══════════════ COLEÇÃO / CATEGORIAS ══════════════ -->
+<section class="section" id="colecao">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Curadoria</p>
+      <h2>Compre por categoria</h2>
+    </div>
+    <div class="cats">
+      <a href="#novidades" class="cat-card" data-filter="roupas">
+        <img src="assets/img/blazer.jpg" alt="Alfaiataria feminina" loading="lazy">
+        <div class="cat-label"><strong>Roupas</strong><span>Alfaiataria & essenciais</span></div>
+      </a>
+      <a href="#novidades" class="cat-card" data-filter="acessorios">
+        <img src="assets/img/bolsa.jpg" alt="Bolsa de couro caramelo" loading="lazy">
+        <div class="cat-label"><strong>Acessórios</strong><span>Bolsas & joias</span></div>
+      </a>
+      <a href="#novidades" class="cat-card" data-filter="promo">
+        <img src="assets/img/vestido.jpg" alt="Vestido de seda" loading="lazy">
+        <div class="cat-label"><strong>Ofertas</strong><span>Até 20% OFF</span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PRODUTOS ══════════════ -->
+<section class="section section-alt" id="novidades">
+  <div class="container">
+    <div class="section-head split">
+      <div>
+        <p class="eyebrow">As favoritas</p>
+        <h2>Mais vendidos</h2>
+      </div>
+      <div class="filters" id="filters" role="tablist" aria-label="Filtrar produtos">
+        <button class="chip active" data-filter="todos">Todos</button>
+        <button class="chip" data-filter="roupas">Roupas</button>
+        <button class="chip" data-filter="acessorios">Acessórios</button>
+        <button class="chip" data-filter="promo">Em promoção</button>
+      </div>
+    </div>
+    <div class="grid" id="product-grid"><!-- produtos via JS --></div>
+  </div>
+</section>
+
+<!-- ══════════════ BANNER CUPOM ══════════════ -->
+<section class="banner">
+  <div class="container banner-inner">
+    <div>
+      <p class="eyebrow light">Sua primeira compra merece</p>
+      <h2>10% OFF com o cupom <em>BEMVINDA10</em></h2>
+      <p class="banner-sub">Válido para todo o site, acumulável com o frete grátis. Aplique na sacola ou no checkout.</p>
+    </div>
+    <button class="btn btn-light btn-lg" id="btn-copy-coupon" type="button">Copiar cupom</button>
+  </div>
+</section>
+
+<!-- ══════════════ DEPOIMENTOS ══════════════ -->
+<section class="section" id="depoimentos">
+  <div class="container">
+    <div class="section-head center">
+      <p class="eyebrow">Prova social</p>
+      <h2>Quem veste, recomenda</h2>
+    </div>
+    <div class="testimonials" id="testimonials"><!-- via JS --></div>
+  </div>
+</section>
+
+<!-- ══════════════ NEWSLETTER ══════════════ -->
+<section class="newsletter">
+  <div class="container newsletter-inner">
+    <div>
+      <h2>Ganhe 10% OFF na primeira compra</h2>
+      <p>Entre para a lista ÉLAN e receba lançamentos e ofertas exclusivas antes de todo mundo.</p>
+    </div>
+    <form class="news-form" id="news-form" novalidate>
+      <input type="email" id="news-email" placeholder="Seu melhor e-mail" aria-label="Seu e-mail" required>
+      <button class="btn btn-primary" type="submit">Quero meu cupom</button>
+    </form>
+    <p class="news-ok" id="news-ok" hidden>✓ Cupom <strong>BEMVINDA10</strong> liberado! Ele já será aplicado na sua sacola.</p>
+  </div>
+</section>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="f-brand">
+      <p class="logo small">ÉLAN<span>.</span></p>
+      <p>Moda feminina essencial, desenhada no Brasil com tecidos nobres e produção responsável.</p>
+      <div class="pay-badges" aria-label="Formas de pagamento">
+        <span class="pay-badge">VISA</span><span class="pay-badge">MASTER</span><span class="pay-badge">ELO</span><span class="pay-badge">AMEX</span><span class="pay-badge">PIX</span><span class="pay-badge">BOLETO</span>
+      </div>
+    </div>
+    <div>
+      <h4>Institucional</h4>
+      <a href="#colecao">Sobre a ÉLAN</a><a href="#novidades">Coleção</a><a href="#depoimentos">Depoimentos</a><a href="#">Sustentabilidade</a>
+    </div>
+    <div>
+      <h4>Ajuda</h4>
+      <a href="#">Trocas e devoluções</a><a href="#">Guia de medidas</a><a href="#">Rastrear pedido</a><a href="#">Fale conosco</a>
+    </div>
+    <div>
+      <h4>Atendimento</h4>
+      <a href="#">WhatsApp · seg a sex, 9h às 18h</a>
+      <a href="mailto:ola@elan.com.br">ola@elan.com.br</a>
+      <p class="f-secure"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Site seguro · Certificado SSL</p>
+    </div>
+  </div>
+  <div class="container footer-legal">
+    <p>© 2026 ÉLAN Moda Feminina LTDA · CNPJ 00.000.000/0001-00 · Montes Claros, MG</p>
+    <p>Loja demonstrativa — pagamentos simulados, nenhuma cobrança real é efetuada.</p>
+  </div>
+</footer>
+
+<!-- ══════════════ WHATSAPP FLUTUANTE ══════════════ -->
+<a class="whats" href="https://wa.me/5538999999999?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20meu%20pedido." target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.7.8-.8 1-.1.2-.3.2-.6.1a6.8 6.8 0 0 1-3.3-2.9c-.3-.4 0-.5.2-.8l.4-.5c.1-.2.1-.3 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.9.9-1.2 2-.7 3.3.7 1.7 2 3.1 3.6 4.1 2 1.2 3.3 1.3 4.3 1 .7-.2 1.5-.7 1.7-1.3.2-.6.2-1.1.1-1.2 0-.1-.2-.2-.6-.4Z"/></svg>
+</a>
+
+<!-- ══════════════ DRAWER: SACOLA ══════════════ -->
+<div class="overlay" id="drawer-overlay" hidden></div>
+<aside class="drawer" id="drawer" aria-label="Sacola de compras" aria-hidden="true">
+  <div class="drawer-head">
+    <h3>Sua sacola <span id="drawer-count"></span></h3>
+    <button class="icon-btn" id="btn-close-drawer" aria-label="Fechar sacola">✕</button>
+  </div>
+  <div class="ship-progress" id="ship-progress">
+    <p id="ship-text"></p>
+    <div class="ship-bar"><span id="ship-fill"></span></div>
+  </div>
+  <div class="drawer-items" id="drawer-items"></div>
+  <div class="drawer-foot" id="drawer-foot">
+    <div class="coupon-row">
+      <input type="text" id="cart-coupon" placeholder="Cupom de desconto" aria-label="Cupom de desconto">
+      <button class="btn btn-ghost btn-sm" id="btn-apply-coupon" type="button">Aplicar</button>
+    </div>
+    <p class="coupon-msg" id="coupon-msg"></p>
+    <div class="totals-row"><span>Subtotal</span><strong id="cart-subtotal">R$ 0,00</strong></div>
+    <div class="totals-row discount" id="cart-discount-row" hidden><span>Desconto (BEMVINDA10)</span><strong id="cart-discount"></strong></div>
+    <p class="totals-note">Frete calculado no checkout · Frete grátis acima de R$ 299</p>
+    <button class="btn btn-primary btn-block btn-lg" id="btn-checkout" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      Finalizar compra
+    </button>
+    <button class="link-block" id="btn-continue" type="button">Continuar comprando</button>
+  </div>
+</aside>
+
+<!-- ══════════════ QUICK VIEW ══════════════ -->
+<div class="overlay modal-overlay" id="qv-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Detalhes do produto">
+    <button class="icon-btn modal-close" id="qv-close" aria-label="Fechar">✕</button>
+    <div class="modal-media"><img id="qv-img" src="" alt=""></div>
+    <div class="modal-info">
+      <p class="eyebrow" id="qv-tag"></p>
+      <h2 id="qv-name"></h2>
+      <p class="qv-rating"><span class="stars">★★★★★</span> <span id="qv-rating"></span></p>
+      <div class="qv-price">
+        <span class="old" id="qv-old"></span>
+        <strong id="qv-price"></strong>
+        <span class="pix-note" id="qv-pix"></span>
+      </div>
+      <p class="qv-installments" id="qv-installments"></p>
+      <p class="qv-desc" id="qv-desc"></p>
+      <div class="qv-sizes" id="qv-sizes-wrap">
+        <p class="opt-label">Tamanho <button class="size-guide" type="button" id="qv-size-guide">Guia de medidas</button></p>
+        <div class="sizes" id="qv-sizes"></div>
+      </div>
+      <div class="qv-actions">
+        <div class="qty" aria-label="Quantidade">
+          <button type="button" id="qv-minus" aria-label="Diminuir">−</button>
+          <span id="qv-qty">1</span>
+          <button type="button" id="qv-plus" aria-label="Aumentar">+</button>
+        </div>
+        <button class="btn btn-primary btn-lg" id="qv-add" type="button">Adicionar à sacola</button>
+      </div>
+      <div class="qv-trust">
+        <span>↺ Troca grátis</span><span>✦ 12x sem juros</span><span>⚡ Envio em 24h</span>
+      </div>
+      <p class="qv-scarcity" id="qv-scarcity" hidden></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CHECKOUT ══════════════ -->
+<div class="checkout" id="checkout" hidden aria-label="Checkout">
+  <div class="checkout-head">
+    <div class="container checkout-head-inner">
+      <button class="link-back" id="btn-back-store" type="button">← Voltar para a loja</button>
+      <p class="logo small">ÉLAN<span>.</span></p>
+      <p class="secure-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Ambiente seguro</p>
+    </div>
+  </div>
+
+  <div class="container checkout-body">
+    <div class="checkout-main">
+      <ol class="steps" id="steps">
+        <li class="active" data-step="1">Dados</li>
+        <li data-step="2">Entrega</li>
+        <li data-step="3">Pagamento</li>
+        <li data-step="4">Confirmação</li>
+      </ol>
+
+      <!-- PASSO 1 -->
+      <section class="co-panel" id="panel-1">
+        <h3>Seus dados</h3>
+        <div class="form-grid">
+          <div class="field span-2"><label for="f-nome">Nome completo *</label><input id="f-nome" type="text" placeholder="Maria da Silva" autocomplete="name"><small class="err"></small></div>
+          <div class="field"><label for="f-email">E-mail *</label><input id="f-email" type="email" placeholder="voce@email.com" autocomplete="email"><small class="err"></small></div>
+          <div class="field"><label for="f-cpf">CPF *</label><input id="f-cpf" type="text" inputmode="numeric" placeholder="000.000.000-00" maxlength="14"><small class="err"></small></div>
+          <div class="field"><label for="f-fone">WhatsApp *</label><input id="f-fone" type="tel" placeholder="(38) 99999-9999" autocomplete="tel"><small class="err"></small></div>
+        </div>
+        <button class="btn btn-primary btn-lg" id="btn-to-2" type="button">Continuar para entrega →</button>
+      </section>
+
+      <!-- PASSO 2 -->
+      <section class="co-panel" id="panel-2" hidden>
+        <h3>Endereço de entrega</h3>
+        <div class="form-grid">
+          <div class="field"><label for="f-cep">CEP *</label><input id="f-cep" type="text" inputmode="numeric" placeholder="00000-000" maxlength="9"><small class="err"></small></div>
+          <div class="field cep-hint"><span id="cep-status">Digite o CEP para preencher automaticamente</span></div>
+          <div class="field span-2"><label for="f-end">Endereço *</label><input id="f-end" type="text" placeholder="Rua, avenida…" autocomplete="street-address"><small class="err"></small></div>
+          <div class="field"><label for="f-num">Número *</label><input id="f-num" type="text" placeholder="123"><small class="err"></small></div>
+          <div class="field"><label for="f-comp">Complemento</label><input id="f-comp" type="text" placeholder="Apto, bloco…"></div>
+          <div class="field"><label for="f-bairro">Bairro *</label><input id="f-bairro" type="text" placeholder="Centro" autocomplete="address-level3"><small class="err"></small></div>
+          <div class="field"><label for="f-cidade">Cidade *</label><input id="f-cidade" type="text" placeholder="Montes Claros" autocomplete="address-level2"><small class="err"></small></div>
+          <div class="field"><label for="f-uf">Estado *</label>
+            <select id="f-uf">
+              <option value="">UF</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option selected>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option>
+            </select><small class="err"></small></div>
+        </div>
+        <h3 class="sub">Opção de frete</h3>
+        <div class="ship-options">
+          <label class="ship-opt"><input type="radio" name="ship" value="standard" checked><div><strong>Frete padrão</strong><span>5 a 9 dias úteis</span></div><em id="ship-standard-price"></em></label>
+          <label class="ship-opt"><input type="radio" name="ship" value="express"><div><strong>Frete expresso</strong><span>1 a 3 dias úteis</span></div><em>R$ 34,90</em></label>
+        </div>
+        <div class="co-nav">
+          <button class="btn btn-ghost" id="btn-back-1" type="button">← Voltar</button>
+          <button class="btn btn-primary btn-lg" id="btn-to-3" type="button">Continuar para pagamento →</button>
+        </div>
+      </section>
+
+      <!-- PASSO 3 -->
+      <section class="co-panel" id="panel-3" hidden>
+        <h3>Pagamento</h3>
+        <div class="pay-tabs">
+          <button class="pay-tab active" data-pay="card" type="button">💳 Cartão<span>até 12x sem juros</span></button>
+          <button class="pay-tab" data-pay="pix" type="button">⚡ PIX<span>aprovação imediata · 5% OFF</span></button>
+          <button class="pay-tab" data-pay="boleto" type="button">🧾 Boleto<span>compensa em até 3 dias</span></button>
+        </div>
+
+        <!-- Cartão -->
+        <div class="pay-pane" id="pane-card">
+          <div class="form-grid">
+            <div class="field span-2"><label for="c-num">Número do cartão *</label>
+              <div class="input-wrap"><input id="c-num" type="text" inputmode="numeric" placeholder="0000 0000 0000 0000" maxlength="19"><span class="brand-tag" id="c-brand"></span></div>
+              <small class="err"></small></div>
+            <div class="field span-2"><label for="c-nome">Nome impresso no cartão *</label><input id="c-nome" type="text" placeholder="MARIA D SILVA"><small class="err"></small></div>
+            <div class="field"><label for="c-val">Validade *</label><input id="c-val" type="text" inputmode="numeric" placeholder="MM/AA" maxlength="5"><small class="err"></small></div>
+            <div class="field"><label for="c-cvv">CVV *</label><input id="c-cvv" type="text" inputmode="numeric" placeholder="123" maxlength="4"><small class="err"></small></div>
+            <div class="field span-2"><label for="c-parc">Parcelas</label><select id="c-parc"></select></div>
+          </div>
+          <button class="btn btn-primary btn-lg btn-block" id="btn-pay-card" type="button">Pagar <span id="pay-card-total"></span></button>
+        </div>
+
+        <!-- PIX -->
+        <div class="pay-pane" id="pane-pix" hidden>
+          <div class="pix-box">
+            <div class="pix-qr"><canvas id="pix-canvas" width="196" height="196"></canvas></div>
+            <div class="pix-info">
+              <p class="pix-title">Pague com PIX e ganhe <strong>5% de desconto</strong></p>
+              <p>Total no PIX: <strong id="pix-total"></strong> <span class="old" id="pix-old"></span></p>
+              <p class="pix-sub">Escaneie o QR Code no app do seu banco ou use o código abaixo. Aprovação em segundos.</p>
+              <div class="pix-code-row">
+                <input type="text" id="pix-code" readonly aria-label="Código PIX copia e cola">
+                <button class="btn btn-ghost btn-sm" id="btn-copy-pix" type="button">Copiar</button>
+              </div>
+              <button class="btn btn-primary btn-block" id="btn-pix-done" type="button">Já fiz o pagamento</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boleto -->
+        <div class="pay-pane" id="pane-boleto" hidden>
+          <div class="boleto-box">
+            <canvas id="boleto-canvas" width="520" height="90"></canvas>
+            <p class="boleto-code" id="boleto-code"></p>
+            <button class="btn btn-ghost btn-sm" id="btn-copy-boleto" type="button">Copiar linha digitável</button>
+            <p class="boleto-note">O boleto vence em <strong>3 dias úteis</strong> e será enviado para o seu e-mail. O pedido é confirmado após a compensação.</p>
+            <button class="btn btn-primary btn-block" id="btn-boleto-done" type="button">Gerar pedido</button>
+          </div>
+        </div>
+
+        <div class="co-nav">
+          <button class="btn btn-ghost" id="btn-back-2" type="button">← Voltar</button>
+        </div>
+        <p class="secure-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg> Seus dados são criptografados e nunca armazenamos o número do seu cartão.</p>
+      </section>
+
+      <!-- PASSO 4 -->
+      <section class="co-panel confirm" id="panel-4" hidden>
+        <div class="confirm-icon">✓</div>
+        <h3 id="confirm-title">Pedido confirmado!</h3>
+        <p id="confirm-text"></p>
+        <div class="confirm-card">
+          <p>Número do pedido</p>
+          <strong id="confirm-order"></strong>
+          <span id="confirm-method"></span>
+        </div>
+        <p class="confirm-note" id="confirm-email-note"></p>
+        <button class="btn btn-primary btn-lg" id="btn-finish" type="button">Continuar comprando</button>
+      </section>
+    </div>
+
+    <!-- RESUMO -->
+    <aside class="checkout-summary">
+      <h3>Resumo do pedido</h3>
+      <div class="sum-items" id="sum-items"></div>
+      <div class="coupon-row">
+        <input type="text" id="sum-coupon" placeholder="Cupom de desconto" aria-label="Cupom de desconto">
+        <button class="btn btn-ghost btn-sm" id="btn-sum-coupon" type="button">Aplicar</button>
+      </div>
+      <div class="sum-lines">
+        <div class="totals-row"><span>Subtotal</span><span id="sum-subtotal"></span></div>
+        <div class="totals-row discount" id="sum-discount-row" hidden><span>Cupom BEMVINDA10</span><span id="sum-discount"></span></div>
+        <div class="totals-row"><span>Frete</span><span id="sum-ship">—</span></div>
+        <div class="totals-row pix-row" id="sum-pix-row" hidden><span>Desconto PIX (5%)</span><span id="sum-pix"></span></div>
+        <div class="totals-row grand"><span>Total</span><strong id="sum-total"></strong></div>
+      </div>
+      <p class="secure-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Pagamento processado em ambiente seguro</p>
+    </aside>
+  </div>
+</div>
+
+<!-- ══════════════ PROCESSANDO ══════════════ -->
+<div class="processing" id="processing" hidden>
+  <div class="processing-card">
+    <div class="spinner"></div>
+    <p id="processing-text">Processando pagamento…</p>
+  </div>
+</div>
+
+<!-- ══════════════ TOASTS ══════════════ -->
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="social-proof" id="social-proof" hidden>
+  <img id="sp-img" src="" alt="">
+  <div class="sp-text"><strong id="sp-name"></strong><span id="sp-detail"></span><em id="sp-time"></em></div>
+  <button class="sp-close" id="sp-close" aria-label="Fechar">✕</button>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
