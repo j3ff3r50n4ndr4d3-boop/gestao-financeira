@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinanceHub — Gestão Financeira</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💰</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="vendor/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">💰</div>
+      <div class="brand-text">
+        <strong>FinanceHub</strong>
+        <span>Gestão Financeira</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard"><span class="nav-ico">📊</span> Dashboard</button>
+      <button class="nav-item" data-view="payables"><span class="nav-ico">📤</span> Contas a Pagar <span class="nav-badge danger" id="badgePayables"></span></button>
+      <button class="nav-item" data-view="receivables"><span class="nav-ico">📥</span> Contas a Receber <span class="nav-badge success" id="badgeReceivables"></span></button>
+      <button class="nav-item" data-view="cashflow"><span class="nav-ico">💹</span> Fluxo de Caixa</button>
+      <button class="nav-item" data-view="accounts"><span class="nav-ico">🏦</span> Contas Bancárias</button>
+      <button class="nav-item" data-view="cards"><span class="nav-ico">💳</span> Cartões de Crédito</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-balance">
+        <span>Saldo em contas</span>
+        <strong id="sidebarBalance">R$ 0,00</strong>
+      </div>
+      <div class="sidebar-actions">
+        <button class="btn-ghost sm" id="btnExport" title="Exportar dados">⬇ Exportar</button>
+        <button class="btn-ghost sm" id="btnImport" title="Importar dados">⬆ Importar</button>
+        <button class="btn-ghost sm" id="btnReset" title="Restaurar dados de demonstração">↺ Demo</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+      <h1 id="viewTitle">Dashboard</h1>
+      <div class="month-nav" id="monthNav">
+        <button id="prevMonth" aria-label="Mês anterior">‹</button>
+        <span id="monthLabel"></span>
+        <button id="nextMonth" aria-label="Próximo mês">›</button>
+        <button class="today-btn" id="todayBtn">Hoje</button>
+      </div>
+    </header>
+
+    <!-- ========== DASHBOARD ========== -->
+    <section class="view active" id="view-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-revenue">
+          <div class="kpi-head"><span class="kpi-ico">📈</span><span>Receitas do mês</span></div>
+          <strong class="kpi-value" id="kpiRevenue">R$ 0,00</strong>
+          <div class="kpi-sub" id="kpiRevenueSub"></div>
+        </div>
+        <div class="kpi-card kpi-expense">
+          <div class="kpi-head"><span class="kpi-ico">📉</span><span>Despesas do mês</span></div>
+          <strong class="kpi-value" id="kpiExpense">R$ 0,00</strong>
+          <div class="kpi-sub" id="kpiExpenseSub"></div>
+        </div>
+        <div class="kpi-card kpi-profit">
+          <div class="kpi-head"><span class="kpi-ico">💵</span><span>Lucro do mês</span></div>
+          <strong class="kpi-value" id="kpiProfit">R$ 0,00</strong>
+          <div class="kpi-sub" id="kpiProfitSub"></div>
+        </div>
+        <div class="kpi-card kpi-margin">
+          <div class="kpi-head"><span class="kpi-ico">🎯</span><span>Margem de lucro</span></div>
+          <strong class="kpi-value" id="kpiMargin">0%</strong>
+          <div class="kpi-bar"><div class="kpi-bar-fill" id="kpiMarginBar"></div></div>
+        </div>
+        <div class="kpi-card kpi-balance">
+          <div class="kpi-head"><span class="kpi-ico">🏦</span><span>Saldo em contas</span></div>
+          <strong class="kpi-value" id="kpiBalance">R$ 0,00</strong>
+          <div class="kpi-sub" id="kpiBalanceSub"></div>
+        </div>
+        <div class="kpi-card kpi-cards">
+          <div class="kpi-head"><span class="kpi-ico">💳</span><span>Faturas de cartões</span></div>
+          <strong class="kpi-value" id="kpiCards">R$ 0,00</strong>
+          <div class="kpi-sub" id="kpiCardsSub"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel-card">
+          <div class="panel-head"><h3>Receitas × Despesas — últimos 6 meses</h3></div>
+          <div class="chart-wrap"><canvas id="chartRevExp"></canvas></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-head"><h3>Despesas por categoria (mês)</h3></div>
+          <div class="chart-wrap"><canvas id="chartCategories"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel-card">
+          <div class="panel-head">
+            <h3>Próximos vencimentos</h3>
+            <button class="btn-ghost sm" data-goto="payables">ver tudo →</button>
+          </div>
+          <div id="upcomingList" class="mini-list"></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-head">
+            <h3>Próximos recebimentos</h3>
+            <button class="btn-ghost sm" data-goto="receivables">ver tudo →</button>
+          </div>
+          <div id="incomingList" class="mini-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CONTAS A PAGAR ========== -->
+    <section class="view" id="view-payables">
+      <div class="toolbar">
+        <div class="summary-chips" id="payablesSummary"></div>
+        <div class="toolbar-right">
+          <input type="search" class="search" id="searchPayables" placeholder="Buscar…">
+          <select id="filterPayables">
+            <option value="all">Todas</option>
+            <option value="pendente">Pendentes</option>
+            <option value="vencido">Vencidas</option>
+            <option value="pago">Pagas</option>
+          </select>
+          <button class="btn-primary" id="btnNewPayable">+ Nova conta</button>
+        </div>
+      </div>
+      <div class="panel-card table-card">
+        <table class="data-table" id="tablePayables">
+          <thead>
+            <tr><th>Descrição</th><th>Categoria</th><th>Vencimento</th><th>Origem</th><th class="right">Valor</th><th>Status</th><th class="right">Ações</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty-state" id="emptyPayables" hidden>Nenhuma conta a pagar neste período. 🎉</div>
+      </div>
+    </section>
+
+    <!-- ========== CONTAS A RECEBER ========== -->
+    <section class="view" id="view-receivables">
+      <div class="toolbar">
+        <div class="summary-chips" id="receivablesSummary"></div>
+        <div class="toolbar-right">
+          <input type="search" class="search" id="searchReceivables" placeholder="Buscar…">
+          <select id="filterReceivables">
+            <option value="all">Todas</option>
+            <option value="pendente">Pendentes</option>
+            <option value="atrasado">Atrasadas</option>
+            <option value="recebido">Recebidas</option>
+          </select>
+          <button class="btn-primary" id="btnNewReceivable">+ Novo recebimento</button>
+        </div>
+      </div>
+      <div class="panel-card table-card">
+        <table class="data-table" id="tableReceivables">
+          <thead>
+            <tr><th>Descrição</th><th>Categoria</th><th>Vencimento</th><th>Conta destino</th><th class="right">Valor</th><th>Status</th><th class="right">Ações</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty-state" id="emptyReceivables" hidden>Nenhum recebimento neste período.</div>
+      </div>
+    </section>
+
+    <!-- ========== FLUXO DE CAIXA ========== -->
+    <section class="view" id="view-cashflow">
+      <div class="toolbar">
+        <div class="tab-switch">
+          <button class="tab-btn active" data-cf="daily">Diário</button>
+          <button class="tab-btn" data-cf="monthly">Mensal</button>
+        </div>
+        <div class="summary-chips" id="cashflowSummary"></div>
+      </div>
+
+      <div id="cfDaily">
+        <div class="panel-card">
+          <div class="panel-head"><h3 id="cfDailyChartTitle">Fluxo diário</h3></div>
+          <div class="chart-wrap tall"><canvas id="chartDaily"></canvas></div>
+        </div>
+        <div class="panel-card table-card">
+          <table class="data-table" id="tableDaily">
+            <thead><tr><th>Dia</th><th class="right">Entradas</th><th class="right">Saídas</th><th class="right">Resultado do dia</th><th class="right">Acumulado</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="cfMonthly" hidden>
+        <div class="panel-card">
+          <div class="panel-head"><h3 id="cfMonthlyChartTitle">Fluxo mensal</h3></div>
+          <div class="chart-wrap tall"><canvas id="chartMonthly"></canvas></div>
+        </div>
+        <div class="panel-card table-card">
+          <table class="data-table" id="tableMonthly">
+            <thead><tr><th>Mês</th><th class="right">Entradas</th><th class="right">Saídas</th><th class="right">Resultado</th><th class="right">Acumulado</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CONTAS BANCÁRIAS ========== -->
+    <section class="view" id="view-accounts">
+      <div class="toolbar">
+        <div class="summary-chips" id="accountsSummary"></div>
+        <div class="toolbar-right">
+          <button class="btn-primary" id="btnNewAccount">+ Nova conta bancária</button>
+        </div>
+      </div>
+      <div class="cards-grid" id="accountsGrid"></div>
+    </section>
+
+    <!-- ========== CARTÕES ========== -->
+    <section class="view" id="view-cards">
+      <div class="toolbar">
+        <div class="summary-chips" id="cardsSummary"></div>
+        <div class="toolbar-right">
+          <button class="btn-primary" id="btnNewCard">+ Novo cartão</button>
+        </div>
+      </div>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 id="modalTitle">Título</h3>
+      <button class="modal-close" id="modalClose" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
