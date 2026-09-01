@@ -30,6 +30,9 @@ html[data-theme="dark"] {
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* Garante que elementos com atributo hidden fiquem sempre invisíveis,
+   mesmo quando alguma regra define display (corrige modal bloqueando a página) */
+[hidden] { display: none !important; }
 html, body { height: 100%; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
