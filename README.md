@@ -1,38 +1,38 @@
-# 💰 FinanceHub — Gestão Financeira
+# 💰 Precifica Fácil — Precificação para Pequenas Empresas
 
-Sistema completo de gestão financeira, 100% front-end (HTML + CSS + JavaScript puro), sem necessidade de backend. Os dados são salvos no navegador (localStorage) e podem ser exportados/importados em JSON.
+Site completo de precificação para pequenas empresas, 100% front-end (um único arquivo HTML, sem dependências, sem servidor). Os dados são salvos no navegador (localStorage) e podem ser exportados/importados em JSON.
 
-## Funcionalidades
+## 🔗 Acesse
 
-- **Dashboard moderno** — receitas, despesas, lucro, margem de lucro, saldo em contas, faturas de cartões, gráfico de receitas × despesas (6 meses), despesas por categoria e listas de próximos vencimentos/recebimentos.
-- **Contas a Pagar** — cadastro, edição, exclusão, filtros e busca; status automático (pendente / vencido / pago); pagamento debita o saldo da conta bancária vinculada (com opção de desfazer).
-- **Contas a Receber** — mesmo fluxo, creditando a conta destino ao receber.
-- **Lançamentos recorrentes 🔁** — repetição mensal, semanal ou anual (até 60 ocorrências) com numeração automática (1/12, 2/12…); datas ajustadas em meses curtos (31/01 → 28/02); exclusão de um único lançamento ou de toda a série.
-- **DRE — Demonstrativo de Resultados** — Receita Bruta → Impostos → Receita Líquida → Custos → Lucro Bruto → Despesas Operacionais → Resultado Líquido, com % sobre a receita, coluna do mês e acumulado do ano, detalhamento por categoria e gráfico do resultado mês a mês.
-- **Fluxo de Caixa** — visão **diária** (por mês) e **mensal** (por ano), com realizado + previsto, gráfico com acumulado e tabela com totais.
-- **Contas Bancárias** — cartões visuais com saldo, cor personalizada e ajuste manual.
-- **Cartões de Crédito** — limite, fatura do mês, uso do limite, dias de fechamento e vencimento.
-- **Modo escuro 🌙** — alternância claro/escuro com um clique (botão no topo), preferência salva e gráficos adaptados ao tema.
-- **Backup** — exportar/importar dados em JSON e restaurar dados de demonstração.
-- **Responsivo** — funciona em desktop e mobile (menu lateral recolhível).
+- **GitHub Pages:** https://j3ff3r50n4ndr4d3-boop.github.io/gestao-financeira/
+- **CDN (acesso imediato):** https://cdn.jsdelivr.net/gh/j3ff3r50n4ndr4d3-boop/gestao-financeira@arena/01a05dd3-gestao-financeira/index.html
 
-## Como executar
+## ✨ Funcionalidades
 
-Qualquer servidor estático serve. Exemplos:
+| Área | Descrição |
+|---|---|
+| 🏠 **Dashboard** | KPIs de faturamento, custo, lucro e margem projetados; mix de receita por produto; destaques e alertas de preço |
+| 📋 **Produtos & Custos** | Ficha técnica com insumos (qtd × custo unitário), mão de obra com encargos, custos indiretos, perdas/quebras e rendimento → **custo unitário real** |
+| 🏷️ **Precificação** | 4 métodos (markup, margem desejada, preço de mercado, manual); deduções (impostos, cartão/Pix, comissões, despesas, frete); preço mínimo, margem líquida, markup real e **ponto de equilíbrio** |
+| 📈 **DRE Gerencial** | Resultado por produto e consolidado (mensal/trimestral/anual), com % da receita; impressão em PDF |
+| 📄 **Tabela de Preços** | Relatório completo com status de cada produto; exporta **CSV** (Excel) e **PDF** |
+| 🏢 **Empresa** | Dados da empresa, imposto padrão, backup em JSON e dados de exemplo |
+| 📚 **Guia de Preços** | Conceitos de markup × margem, fórmulas, erros comuns e dicas práticas |
 
-```bash
-python3 -m http.server 8000
-# ou
-npx serve .
-```
+## 🚀 Como usar
 
-Abra `http://localhost:8000` no navegador.
+1. Abra o site (o arquivo `index.html` funciona offline).
+2. Clique em **✨ Dados de exemplo** para ver a ferramenta preenchida, ou cadastre produtos na aba **Produtos & Custos**.
+3. Defina o preço em **Precificação**, informe as quantidades vendidas no **DRE** e exporte a **Tabela de Preços**.
 
-## Estrutura
+## 🗂️ Estrutura do repositório
 
 ```
-index.html          # estrutura da aplicação
-css/style.css       # estilos
-js/app.js           # lógica (estado, persistência, gráficos, formulários)
-vendor/chart.umd.min.js  # Chart.js v4 (local, funciona offline)
+index.html                      # Precifica Fácil — site de precificação (página publicada)
+Qwen_html_20260824_y8j99386e.html  # versão inicial/legado
+css/, js/, vendor/              # arquivos legados do FinanceHub (gestão financeira)
 ```
+
+## 🛠️ Publicação
+
+O site é publicado via **GitHub Pages** (branch de publicação: `arena/01a05dd3-gestao-financeira`).
