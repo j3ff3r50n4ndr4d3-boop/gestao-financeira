@@ -29,6 +29,7 @@
       <button class="nav-item" data-view="payables"><span class="nav-ico">📤</span> Contas a Pagar <span class="nav-badge danger" id="badgePayables"></span></button>
       <button class="nav-item" data-view="receivables"><span class="nav-ico">📥</span> Contas a Receber <span class="nav-badge success" id="badgeReceivables"></span></button>
       <button class="nav-item" data-view="cashflow"><span class="nav-ico">💹</span> Fluxo de Caixa</button>
+      <button class="nav-item" data-view="dre"><span class="nav-ico">📑</span> DRE</button>
       <button class="nav-item" data-view="accounts"><span class="nav-ico">🏦</span> Contas Bancárias</button>
       <button class="nav-item" data-view="cards"><span class="nav-ico">💳</span> Cartões de Crédito</button>
     </nav>
@@ -58,6 +59,7 @@
         <button id="nextMonth" aria-label="Próximo mês">›</button>
         <button class="today-btn" id="todayBtn">Hoje</button>
       </div>
+      <button class="theme-toggle" id="themeToggle" title="Alternar modo claro/escuro">🌙</button>
     </header>
 
     <!-- ========== DASHBOARD ========== -->
@@ -210,6 +212,25 @@
             <tbody></tbody>
           </table>
         </div>
+      </div>
+    </section>
+
+    <!-- ========== DRE ========== -->
+    <section class="view" id="view-dre">
+      <div class="toolbar">
+        <div class="summary-chips" id="dreSummary"></div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-head"><h3 id="dreChartTitle">Resultado líquido mês a mês</h3></div>
+        <div class="chart-wrap"><canvas id="chartDre"></canvas></div>
+      </div>
+      <div class="panel-card table-card">
+        <table class="data-table dre-table" id="tableDre">
+          <thead>
+            <tr><th>Demonstração do Resultado</th><th class="right" id="dreColMonth">Mês</th><th class="right">% Rec.</th><th class="right" id="dreColYear">Acumulado no ano</th><th class="right">% Rec.</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </section>
 

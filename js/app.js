@@ -35,6 +35,21 @@ function isoInMonth(iso, year, month) { // month: 1-12
   return y === year && m === month;
 }
 function daysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
+/* Avança uma data ISO i intervalos (monthly/weekly/yearly), preservando o dia quando possível */
+function addInterval(iso, kind, i) {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (kind === 'weekly') {
+    const dt = new Date(y, m - 1, d + 7 * i);
+    return toISO(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+  }
+  if (kind === 'yearly') {
+    return toISO(y + i, m, Math.min(d, daysInMonth(y + i, m)));
+  }
+  const total = (m - 1) + i;
+  const ny = y + Math.floor(total / 12);
+  const nm = (total % 12) + 1;
+  return toISO(ny, nm, Math.min(d, daysInMonth(ny, nm)));
+}
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
@@ -131,6 +146,28 @@ const state = {
 };
 const charts = {}; // instâncias Chart.js
 
+/* ---------------- Tema (claro/escuro) ---------------- */
+const THEME_KEY = 'financehub_theme';
+let theme = localStorage.getItem(THEME_KEY) || 'light';
+function gridColor() { return theme === 'dark' ? '#243049' : '#eef2f7'; }
+function surfaceColor() { return theme === 'dark' ? '#141e33' : '#ffffff'; }
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeToggle');
+  if (btn) { btn.textContent = theme === 'dark' ? '☀️' : '🌙'; }
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.color = theme === 'dark' ? '#94a3b8' : '#64748b';
+    Chart.defaults.borderColor = gridColor();
+  }
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme();
+  render(); // recria gráficos com as cores do tema
+  toast(theme === 'dark' ? 'Modo escuro ativado.' : 'Modo claro ativado.', 'info');
+});
+
 /* ---------------- Status derivado ---------------- */
 function payableStatus(p) {
   if (p.status === 'pago') return 'pago';
@@ -197,7 +234,8 @@ function switchView(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
   const titles = {
     dashboard: 'Dashboard', payables: 'Contas a Pagar', receivables: 'Contas a Receber',
-    cashflow: 'Fluxo de Caixa', accounts: 'Contas Bancárias', cards: 'Cartões de Crédito',
+    cashflow: 'Fluxo de Caixa', dre: 'DRE — Demonstrativo de Resultados',
+    accounts: 'Contas Bancárias', cards: 'Cartões de Crédito',
   };
   document.getElementById('viewTitle').textContent = titles[view];
   document.getElementById('sidebar').classList.remove('open');
@@ -238,6 +276,7 @@ function render() {
     case 'payables': renderPayables(); break;
     case 'receivables': renderReceivables(); break;
     case 'cashflow': renderCashflow(); break;
+    case 'dre': renderDRE(); break;
     case 'accounts': renderAccounts(); break;
     case 'cards': renderCards(); break;
   }
@@ -320,7 +359,7 @@ function renderDashboard() {
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxHeight: 7 } }, tooltip: tooltipMoney },
-      scales: { y: { ticks: { callback: moneyTick }, grid: { color: '#eef2f7' } }, x: { grid: { display: false } } },
+      scales: { y: { ticks: { callback: moneyTick }, grid: { color: gridColor() } }, x: { grid: { display: false } } },
     },
   });
 
@@ -332,7 +371,7 @@ function renderDashboard() {
     type: 'doughnut',
     data: {
       labels: cats.map(c => c[0]),
-      datasets: [{ data: cats.map(c => c[1]), backgroundColor: PALETTE, borderWidth: 2, borderColor: '#fff' }],
+      datasets: [{ data: cats.map(c => c[1]), backgroundColor: PALETTE, borderWidth: 2, borderColor: surfaceColor() }],
     },
     options: {
       responsive: true, maintainAspectRatio: false, cutout: '62%',
@@ -402,7 +441,7 @@ function renderPayables() {
   tbody.innerHTML = rows.map(p => {
     const st = payableStatus(p);
     return `<tr class="${st === 'pago' ? 'row-paid' : ''}">
-      <td class="desc"><strong>${escapeHtml(p.description)}</strong>${p.status === 'pago' && p.paidDate ? `<small>pago em ${fmtDate(p.paidDate)}</small>` : ''}</td>
+      <td class="desc"><strong>${escapeHtml(p.description)}${p.recurrenceId ? ' <span title="Lançamento recorrente">🔁</span>' : ''}</strong>${p.status === 'pago' && p.paidDate ? `<small>pago em ${fmtDate(p.paidDate)}</small>` : ''}</td>
       <td><span class="cat-tag">${escapeHtml(p.category)}</span></td>
       <td>${fmtDate(p.dueDate)}</td>
       <td>${originLabel(p)}</td>
@@ -451,7 +490,7 @@ function renderReceivables() {
     const st = receivableStatus(r);
     const acc = accountById(r.accountId);
     return `<tr class="${st === 'recebido' ? 'row-paid' : ''}">
-      <td class="desc"><strong>${escapeHtml(r.description)}</strong>${r.status === 'recebido' && r.receivedDate ? `<small>recebido em ${fmtDate(r.receivedDate)}</small>` : ''}</td>
+      <td class="desc"><strong>${escapeHtml(r.description)}${r.recurrenceId ? ' <span title="Lançamento recorrente">🔁</span>' : ''}</strong>${r.status === 'recebido' && r.receivedDate ? `<small>recebido em ${fmtDate(r.receivedDate)}</small>` : ''}</td>
       <td><span class="cat-tag">${escapeHtml(r.category)}</span></td>
       <td>${fmtDate(r.dueDate)}</td>
       <td>${acc ? '🏦 ' + escapeHtml(acc.name) : '—'}</td>
@@ -538,7 +577,7 @@ function renderCashflowDaily() {
         legend: { position: 'bottom', labels: { usePointStyle: true, boxHeight: 7 } },
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(Math.abs(c.parsed.y))}` } },
       },
-      scales: { y: { ticks: { callback: moneyTick }, grid: { color: '#eef2f7' } }, x: { grid: { display: false }, stacked: true } },
+      scales: { y: { ticks: { callback: moneyTick }, grid: { color: gridColor() } }, x: { grid: { display: false }, stacked: true } },
     },
   });
 }
@@ -594,7 +633,108 @@ function renderCashflowMonthly() {
         legend: { position: 'bottom', labels: { usePointStyle: true, boxHeight: 7 } },
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(Math.abs(c.parsed.y))}` } },
       },
-      scales: { y: { ticks: { callback: moneyTick }, grid: { color: '#eef2f7' } }, x: { grid: { display: false } } },
+      scales: { y: { ticks: { callback: moneyTick }, grid: { color: gridColor() } }, x: { grid: { display: false } } },
+    },
+  });
+}
+
+/* ================= DRE ================= */
+function dreTotals(year, monthFrom, monthTo) {
+  const revByCat = {}, expByCat = {};
+  let revenue = 0, expense = 0;
+  db.receivables.forEach(r => {
+    const [y, m] = effDateR(r).split('-').map(Number);
+    if (y === year && m >= monthFrom && m <= monthTo) {
+      revByCat[r.category] = (revByCat[r.category] || 0) + r.value; revenue += r.value;
+    }
+  });
+  db.payables.forEach(p => {
+    const [y, m] = effDateP(p).split('-').map(Number);
+    if (y === year && m >= monthFrom && m <= monthTo) {
+      expByCat[p.category] = (expByCat[p.category] || 0) + p.value; expense += p.value;
+    }
+  });
+  return { revByCat, expByCat, revenue, expense };
+}
+
+function renderDRE() {
+  const { year, month } = refYM();
+  const M = dreTotals(year, month, month);   // mês selecionado
+  const Y = dreTotals(year, 1, month);       // acumulado jan → mês selecionado
+
+  const pctOf = (v, base) => base > 0 ? (v / base * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%' : '—';
+
+  const taxM = M.expByCat['Impostos'] || 0,      taxY = Y.expByCat['Impostos'] || 0;
+  const costM = M.expByCat['Fornecedores'] || 0, costY = Y.expByCat['Fornecedores'] || 0;
+  const netRevM = M.revenue - taxM,              netRevY = Y.revenue - taxY;
+  const grossM = netRevM - costM,                grossY = netRevY - costY;
+  const opCats = [...new Set([...Object.keys(M.expByCat), ...Object.keys(Y.expByCat)])]
+    .filter(c => c !== 'Impostos' && c !== 'Fornecedores')
+    .sort((a, b) => (Y.expByCat[b] || 0) - (Y.expByCat[a] || 0));
+  const opM = opCats.reduce((s, c) => s + (M.expByCat[c] || 0), 0);
+  const opY = opCats.reduce((s, c) => s + (Y.expByCat[c] || 0), 0);
+  const netM = grossM - opM, netY = grossY - opY;
+  const marginM = M.revenue > 0 ? netM / M.revenue * 100 : 0;
+  const marginY = Y.revenue > 0 ? netY / Y.revenue * 100 : 0;
+
+  document.getElementById('dreColMonth').textContent = `${MONTHS_SHORT[month - 1]}/${year}`;
+  document.getElementById('dreColYear').textContent = month === 1 ? `Jan/${year}` : `Jan–${MONTHS_SHORT[month - 1]}/${year}`;
+
+  document.getElementById('dreSummary').innerHTML = `
+    <span class="chip green">Receita bruta (mês) <b>${fmt(M.revenue)}</b></span>
+    <span class="chip ${netM >= 0 ? 'blue' : 'red'}">Resultado líquido (mês) <b>${fmt(netM)}</b></span>
+    <span class="chip ${marginM >= 0 ? 'green' : 'red'}">Margem líquida <b>${marginM.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</b></span>
+    <span class="chip ${netY >= 0 ? 'blue' : 'red'}">Acumulado no ano <b>${fmt(netY)}</b></span>`;
+
+  const rows = [];
+  const colorFor = v => v >= 0 ? 'var(--success)' : 'var(--danger)';
+  const line = (cls, label, vM, vY, opts = {}) => {
+    const sign = opts.negative ? '(−) ' : '';
+    rows.push(`<tr class="${cls}">
+      <td>${label}</td>
+      <td class="right" ${opts.result ? `style="font-weight:800;color:${colorFor(vM)}"` : ''}>${sign}${fmt(Math.abs(vM)) }</td>
+      <td class="right dre-pct">${pctOf(Math.abs(vM), M.revenue)}</td>
+      <td class="right" ${opts.result ? `style="font-weight:800;color:${colorFor(vY)}"` : ''}>${sign}${fmt(Math.abs(vY))}</td>
+      <td class="right dre-pct">${pctOf(Math.abs(vY), Y.revenue)}</td>
+    </tr>`);
+  };
+
+  line('dre-section', 'Receita Bruta', M.revenue, Y.revenue);
+  [...new Set([...Object.keys(M.revByCat), ...Object.keys(Y.revByCat)])]
+    .sort((a, b) => (Y.revByCat[b] || 0) - (Y.revByCat[a] || 0))
+    .forEach(c => line('dre-sub', c, M.revByCat[c] || 0, Y.revByCat[c] || 0));
+  line('', '(−) Impostos e deduções', -taxM, -taxY, { negative: true });
+  line('dre-section', '= Receita Líquida', netRevM, netRevY);
+  line('', '(−) Custos diretos (fornecedores)', -costM, -costY, { negative: true });
+  line('dre-section', `= Lucro Bruto <span class="dre-pct">(margem ${pctOf(grossM, M.revenue)})</span>`, grossM, grossY);
+  line('', '(−) Despesas Operacionais', -opM, -opY, { negative: true });
+  opCats.forEach(c => line('dre-sub', c, M.expByCat[c] || 0, Y.expByCat[c] || 0));
+  line('dre-section dre-result', `= Resultado Líquido <span class="dre-pct">(margem ${marginM.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%)</span>`, netM, netY, { result: true });
+
+  document.querySelector('#tableDre tbody').innerHTML = rows.join('');
+
+  /* Gráfico: resultado líquido mês a mês do ano */
+  document.getElementById('dreChartTitle').textContent = `Resultado líquido mês a mês — ${year}`;
+  const netByMonth = [];
+  for (let m = 1; m <= 12; m++) {
+    const t = dreTotals(year, m, m);
+    netByMonth.push(t.revenue - t.expense);
+  }
+  makeChart('dre', 'chartDre', {
+    type: 'bar',
+    data: {
+      labels: MONTHS_SHORT,
+      datasets: [{
+        label: 'Resultado líquido',
+        data: netByMonth,
+        backgroundColor: netByMonth.map(v => v >= 0 ? 'rgba(16,185,129,.85)' : 'rgba(239,68,68,.85)'),
+        borderRadius: 6, maxBarThickness: 30,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.parsed.y) } } },
+      scales: { y: { ticks: { callback: moneyTick }, grid: { color: gridColor() } }, x: { grid: { display: false } } },
     },
   });
 }
@@ -708,6 +848,41 @@ function confirmDelete(msg, onYes) {
   });
 }
 
+/* Remove um lançamento devolvendo/estornando o saldo se já estava pago/recebido */
+function removeEntry(kind, item) {
+  if (kind === 'payable') {
+    if (item.status === 'pago' && item.accountId) { const a = accountById(item.accountId); if (a) a.balance += item.value; }
+    db.payables = db.payables.filter(x => x.id !== item.id);
+  } else {
+    if (item.status === 'recebido' && item.accountId) { const a = accountById(item.accountId); if (a) a.balance -= item.value; }
+    db.receivables = db.receivables.filter(x => x.id !== item.id);
+  }
+}
+
+/* Exclusão de item que pertence a uma série recorrente */
+function openSeriesDelete(kind, item) {
+  const list = kind === 'payable' ? db.payables : db.receivables;
+  const series = list.filter(x => x.recurrenceId === item.recurrenceId);
+  openModal('Excluir lançamento recorrente', `
+    <p style="margin-bottom:6px">"<b>${escapeHtml(item.description)}</b>" faz parte de uma série recorrente com <b>${series.length}</b> lançamentos.</p>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:4px">O que deseja excluir?</p>
+    <div class="form-actions" style="flex-wrap:wrap">
+      <button class="btn-ghost" id="sdCancel">Cancelar</button>
+      <button class="btn-primary" id="sdOne">Somente este</button>
+      <button class="btn-primary" id="sdAll" style="background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 14px rgba(239,68,68,.35)">Toda a série (${series.length})</button>
+    </div>`, body => {
+    body.querySelector('#sdCancel').onclick = closeModal;
+    body.querySelector('#sdOne').onclick = () => {
+      removeEntry(kind, item);
+      saveDB(); closeModal(); render(); toast('Lançamento excluído.', 'info');
+    };
+    body.querySelector('#sdAll').onclick = () => {
+      series.forEach(x => removeEntry(kind, x));
+      saveDB(); closeModal(); render(); toast(`Série recorrente excluída (${series.length} lançamentos).`, 'info');
+    };
+  });
+}
+
 /* Delegação de cliques em ações */
 document.addEventListener('click', e => {
   const btn = e.target.closest('[data-act]');
@@ -724,20 +899,26 @@ document.addEventListener('click', e => {
     case 'edit-card': openCardForm(cardById(id)); break;
     case 'del-p': {
       const p = db.payables.find(x => x.id === id);
-      confirmDelete(`Excluir a conta "${p.description}"?`, () => {
-        if (p.status === 'pago' && p.accountId) { const a = accountById(p.accountId); if (a) a.balance += p.value; }
-        db.payables = db.payables.filter(x => x.id !== id);
-        saveDB(); render(); toast('Conta excluída.', 'info');
-      });
+      if (p.recurrenceId && db.payables.filter(x => x.recurrenceId === p.recurrenceId).length > 1) {
+        openSeriesDelete('payable', p);
+      } else {
+        confirmDelete(`Excluir a conta "${p.description}"?`, () => {
+          removeEntry('payable', p);
+          saveDB(); render(); toast('Conta excluída.', 'info');
+        });
+      }
       break;
     }
     case 'del-r': {
       const r = db.receivables.find(x => x.id === id);
-      confirmDelete(`Excluir o recebimento "${r.description}"?`, () => {
-        if (r.status === 'recebido' && r.accountId) { const a = accountById(r.accountId); if (a) a.balance -= r.value; }
-        db.receivables = db.receivables.filter(x => x.id !== id);
-        saveDB(); render(); toast('Recebimento excluído.', 'info');
-      });
+      if (r.recurrenceId && db.receivables.filter(x => x.recurrenceId === r.recurrenceId).length > 1) {
+        openSeriesDelete('receivable', r);
+      } else {
+        confirmDelete(`Excluir o recebimento "${r.description}"?`, () => {
+          removeEntry('receivable', r);
+          saveDB(); render(); toast('Recebimento excluído.', 'info');
+        });
+      }
       break;
     }
     case 'del-acc': {
@@ -790,12 +971,26 @@ function openPayableForm(item) {
           <optgroup label="Cartões de crédito">${db.cards.map(c => `<option value="card:${c.id}" ${def.cardId === c.id ? 'selected' : ''}>💳 ${escapeHtml(c.name)}</option>`).join('')}</optgroup>
         </select>
       </div>
+      ${!isEdit ? `
+      <div class="field"><label>Repetir 🔁</label>
+        <select name="recur">
+          <option value="none">Não repetir</option>
+          <option value="monthly">Mensal</option>
+          <option value="weekly">Semanal</option>
+          <option value="yearly">Anual</option>
+        </select>
+      </div>
+      <div class="field"><label>Nº de lançamentos</label><input name="recurCount" type="number" min="2" max="60" value="12" disabled></div>` : ''}
       <div class="form-actions full">
         <button type="button" class="btn-ghost" id="fCancel">Cancelar</button>
         <button type="submit" class="btn-primary">${isEdit ? 'Salvar alterações' : 'Adicionar conta'}</button>
       </div>
     </form>`, body => {
     body.querySelector('#fCancel').onclick = closeModal;
+    const recurSel = body.querySelector('[name=recur]');
+    if (recurSel) {
+      recurSel.onchange = () => { body.querySelector('[name=recurCount]').disabled = recurSel.value === 'none'; };
+    }
     body.querySelector('#fPay').onsubmit = ev => {
       ev.preventDefault();
       const fd = new FormData(ev.target);
@@ -810,12 +1005,24 @@ function openPayableForm(item) {
         accountId, cardId,
       };
       if (!data.description || !(data.value > 0) || !data.dueDate) { toast('Preencha os campos obrigatórios.', 'error'); return; }
+      const recur = (!isEdit && fd.get('recur')) || 'none';
       if (isEdit) {
         // se já estava paga e mudou valor/conta, ajusta o saldo
         if (item.status === 'pago' && item.accountId) { const a = accountById(item.accountId); if (a) a.balance += item.value; }
         Object.assign(item, data);
         if (item.status === 'pago' && item.accountId) { const a = accountById(item.accountId); if (a) a.balance -= item.value; }
         toast('Conta atualizada.');
+      } else if (recur !== 'none') {
+        const count = Math.min(60, Math.max(2, parseInt(fd.get('recurCount')) || 2));
+        const rid = uid();
+        for (let i = 0; i < count; i++) {
+          db.payables.push({
+            id: uid(), status: 'pendente', paidDate: null, recurrenceId: rid, ...data,
+            description: `${data.description} (${i + 1}/${count})`,
+            dueDate: addInterval(data.dueDate, recur, i),
+          });
+        }
+        toast(`${count} lançamentos recorrentes criados. 🔁`);
       } else {
         db.payables.push({ id: uid(), status: 'pendente', paidDate: null, ...data });
         toast('Conta a pagar adicionada.');
@@ -838,12 +1045,26 @@ function openReceivableForm(item) {
       <div class="field"><label>Valor (R$) *</label><input name="value" type="number" step="0.01" min="0.01" required value="${def.value || ''}" placeholder="0,00"></div>
       <div class="field"><label>Vencimento *</label><input name="dueDate" type="date" required value="${def.dueDate}"></div>
       <div class="field"><label>Conta destino</label><select name="accountId">${selectOptions(db.accounts, def.accountId, 'Não definida')}</select></div>
+      ${!isEdit ? `
+      <div class="field"><label>Repetir 🔁</label>
+        <select name="recur">
+          <option value="none">Não repetir</option>
+          <option value="monthly">Mensal</option>
+          <option value="weekly">Semanal</option>
+          <option value="yearly">Anual</option>
+        </select>
+      </div>
+      <div class="field"><label>Nº de lançamentos</label><input name="recurCount" type="number" min="2" max="60" value="12" disabled></div>` : ''}
       <div class="form-actions full">
         <button type="button" class="btn-ghost" id="fCancel">Cancelar</button>
         <button type="submit" class="btn-primary">${isEdit ? 'Salvar alterações' : 'Adicionar recebimento'}</button>
       </div>
     </form>`, body => {
     body.querySelector('#fCancel').onclick = closeModal;
+    const recurSel = body.querySelector('[name=recur]');
+    if (recurSel) {
+      recurSel.onchange = () => { body.querySelector('[name=recurCount]').disabled = recurSel.value === 'none'; };
+    }
     body.querySelector('#fRec').onsubmit = ev => {
       ev.preventDefault();
       const fd = new FormData(ev.target);
@@ -855,11 +1076,23 @@ function openReceivableForm(item) {
         accountId: fd.get('accountId') || null,
       };
       if (!data.description || !(data.value > 0) || !data.dueDate) { toast('Preencha os campos obrigatórios.', 'error'); return; }
+      const recur = (!isEdit && fd.get('recur')) || 'none';
       if (isEdit) {
         if (item.status === 'recebido' && item.accountId) { const a = accountById(item.accountId); if (a) a.balance -= item.value; }
         Object.assign(item, data);
         if (item.status === 'recebido' && item.accountId) { const a = accountById(item.accountId); if (a) a.balance += item.value; }
         toast('Recebimento atualizado.');
+      } else if (recur !== 'none') {
+        const count = Math.min(60, Math.max(2, parseInt(fd.get('recurCount')) || 2));
+        const rid = uid();
+        for (let i = 0; i < count; i++) {
+          db.receivables.push({
+            id: uid(), status: 'pendente', receivedDate: null, recurrenceId: rid, ...data,
+            description: `${data.description} (${i + 1}/${count})`,
+            dueDate: addInterval(data.dueDate, recur, i),
+          });
+        }
+        toast(`${count} recebimentos recorrentes criados. 🔁`);
       } else {
         db.receivables.push({ id: uid(), status: 'pendente', receivedDate: null, ...data });
         toast('Recebimento adicionado.');
@@ -1018,4 +1251,5 @@ document.getElementById('btnReset').addEventListener('click', () => {
 
 /* ================= Inicialização ================= */
 loadDB();
+applyTheme();
 render();
