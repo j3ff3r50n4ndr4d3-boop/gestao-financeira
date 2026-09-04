@@ -207,12 +207,19 @@ public/
   css/estilos.css
   js/graficos.js     gráficos em SVG puro (gauge, linha, Pareto, empilhada, colunas)
   js/aplicacao.js    aplicação: estado, renderização e chamadas à API
+  js/banco-local.js  camada de dados no navegador (versão estática)
+  js/api-local.js    as rotas REST reimplementadas sobre o localStorage
+scripts/
+  gerar-estatico.js  gera a pasta docs/ publicável no GitHub Pages
+docs/                build estática gerada (não editar à mão)
 test/
   oee.test.js         motor de cálculo (18 testes)
   tempos.test.js      cronometragem, sequência e balanceamento (18 testes)
   api.test.js         API de ponta a ponta contra SQLite em memória (20 testes)
   api-producao.test.js  API dos módulos novos (17 testes)
   backup.test.js      cópia de segurança e restauração (9 testes)
+  estatico.test.js    equivalência servidor × versão estática (31 testes)
+  pages.test.js       a build do GitHub Pages de pé, sem fetch (6 testes)
   frontend.test.js    scripts de navegador executados com dados reais da API (17 testes)
 ```
 
@@ -328,6 +335,35 @@ A aplicação já está pronta para qualquer plataforma: lê `PORT` e `HOST` do 
 diretório de dados sozinho, **semeia o banco automaticamente no primeiro boot** e expõe
 `/api/health` como sonda de saúde.
 
+### Versão estática publicada no GitHub Pages
+
+O caminho 2 da seção anterior está implementado: a pasta **`docs/`** contém uma versão que
+roda inteira no navegador, sem servidor. É ela que o GitHub Pages publica, de graça e sem
+prazo.
+
+```bash
+node scripts/gerar-estatico.js   # regenera docs/
+```
+
+A build copia o front-end e os **mesmos** motores de cálculo do servidor (`oee.js`, `tempos.js`
+e `balanceamento.js`, agora com exportação dupla) e embute o cenário de exemplo direto no HTML
+— sem `fetch`, o que faz a página funcionar até aberta do disco.
+
+**O que muda de verdade em relação à versão com servidor:**
+
+| | Com servidor | Estática (Pages) |
+|---|---|---|
+| Onde ficam os dados | SQLite no servidor | `localStorage` do navegador |
+| Base compartilhada entre pessoas | Sim | **Não** |
+| Sobrevive a limpar dados do site | Sim | **Não** |
+| Precisa de processo rodando | Sim | Não |
+| Custo para ficar no ar | — | Zero, permanente |
+
+Os números são os mesmos: `test/estatico.test.js` alimenta as duas versões com o mesmo banco e
+compara a resposta de cada endpoint — 26 consultas, as mutações e 19 casos de erro.
+
+Para republicar depois de mudar o código, rode o gerador e faça o commit de `docs/`.
+
 ### Opção gratuita sem cartão de crédito: Render
 
 1. Crie uma conta em <https://render.com> (pode entrar com a conta do GitHub).
@@ -373,7 +409,7 @@ em hospedagem gratuita: baixar o JSON antes de um reinício e restaurá-lo depoi
 npm test
 ```
 
-99 testes cobrem:
+136 testes cobrem:
 
 - **`oee.test.js`** — tempo ciclo ideal, o cenário de referência 85,71% × 90% × 97,22% = 75%,
   separação entre paradas planejadas e não planejadas, a identidade
@@ -395,6 +431,13 @@ npm test
   o CRUD de equipes, operadores, operações e cronometragens com seus bloqueios 409, o recálculo
   de SAM, a simulação e a gravação de balanceamentos, e o fechamento cruzado das quatro visões
   do acompanhamento sobre o mesmo total de peças.
+- **`estatico.test.js`** — alimenta a versão com servidor e a versão estática com o MESMO banco
+  e compara a resposta de cada endpoint: 26 consultas, as mutações, 19 casos de validação e
+  erro, e os resultados de cronometragem e balanceamento. É o que impede a camada de dados do
+  navegador de divergir do servidor em silêncio.
+- **`pages.test.js`** — carrega a pasta `docs/` gerada na ordem de scripts do próprio
+  `index.html`, com `fetch` proibido, e verifica que a página sobe sozinha, que as abas novas
+  funcionam sem servidor e que o que é lançado volta na visita seguinte.
 - **`backup.test.js`** — exportação das 14 tabelas com conferência de contagem, restauração em
   banco vazio, substituição sem acumular, compatibilidade com backup antigo sem colunas novas,
   **rollback que preserva o banco quando uma linha falha**, rejeição de payload inválido e o
