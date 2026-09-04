@@ -342,7 +342,8 @@ roda inteira no navegador, sem servidor. É ela que o GitHub Pages publica, de g
 prazo.
 
 ```bash
-node scripts/gerar-estatico.js   # regenera docs/
+npm run pages      # regenera docs/
+npm run pages:ver  # serve docs/ localmente, do jeito que o Pages serviria
 ```
 
 A build copia o front-end e os **mesmos** motores de cálculo do servidor (`oee.js`, `tempos.js`

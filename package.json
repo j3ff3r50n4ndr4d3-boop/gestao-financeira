@@ -12,7 +12,8 @@
     "dev": "node --disable-warning=ExperimentalWarning --watch server/index.js",
     "seed": "node --disable-warning=ExperimentalWarning server/seed.js --force",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
-    "pages": "node --disable-warning=ExperimentalWarning scripts/gerar-estatico.js"
+    "pages": "node --disable-warning=ExperimentalWarning scripts/gerar-estatico.js",
+    "pages:ver": "node scripts/servir-estatico.js 3001"
   },
   "keywords": [
     "oee",
