@@ -1,0 +1,16 @@
+# Banco local: a imagem começa sempre limpa e é semeada no primeiro boot
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Controle de versão e artefatos
+.git
+.gitignore
+node_modules/
+npm-debug.log*
+
+# Não é necessário dentro da imagem
+test/
+README.md
+Qwen_html_20260824_y8j99386e.html
