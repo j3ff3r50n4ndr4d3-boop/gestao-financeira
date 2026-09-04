@@ -59,10 +59,16 @@ function criarElemento(tag = 'div', dono = null) {
     dispatch(tipo, evento) { (this._listeners[tipo] || []).forEach((fn) => fn(evento)); },
 
     querySelector(sel) {
+      const achado = this.querySelectorAll(sel);
+      if (achado.length) return achado[0];
       if (!cache.has(sel)) cache.set(sel, criarElemento('div', this));
       return cache.get(sel);
     },
-    querySelectorAll() { return []; },
+    querySelectorAll(sel) {
+      const [raiz, resto] = dividirSeletor(sel);
+      if (raiz) return [];            // descendente de outro elemento: não é filho direto
+      return this.children.filter((f) => combinar(f, resto || sel));
+    },
     closest() { return null; },
 
     classList: {
@@ -80,6 +86,24 @@ function criarElemento(tag = 'div', dono = null) {
   return el;
 }
 
+/** Separa "#container .classe" em raiz + resto. Devolve raiz vazia para seletores simples. */
+function dividirSeletor(sel) {
+  const partes = String(sel).trim().split(/\s+/);
+  if (partes.length < 2) return ['', String(sel).trim()];
+  return [partes[0], partes.slice(1).join(' ')];
+}
+
+/** Casa um elemento com um seletor simples (lista separada por vírgula de tag ou .classe). */
+function combinar(el, sel) {
+  return String(sel).split(',').map((x) => x.trim()).filter(Boolean).some((p) => {
+    if (p.startsWith('.')) {
+      const classe = p.slice(1);
+      return String(el.className || '').split(/\s+/).includes(classe) || el.classList.contains(classe);
+    }
+    return el.tagName === p.toUpperCase();
+  });
+}
+
 function criarDom() {
   const registry = new Map();
   const document = {
@@ -87,7 +111,12 @@ function criarDom() {
       if (!registry.has(sel)) registry.set(sel, criarElemento('div'));
       return registry.get(sel);
     },
-    querySelectorAll() { return []; },
+    querySelectorAll(sel) {
+      const [raiz, resto] = dividirSeletor(sel);
+      const alvo = raiz ? this.querySelector(raiz) : null;
+      if (!alvo) return [];
+      return alvo.children.filter((f) => combinar(f, resto));
+    },
     createElement: (tag) => criarElemento(tag),
     createElementNS: (_ns, tag) => criarElemento(tag),
     createTextNode: (t) => ({ nodeType: 3, textContent: String(t) }),
@@ -97,7 +126,7 @@ function criarDom() {
 
 /* ---------------------------------------------------------------- contexto --- */
 
-function subirAplicacao(baseUrl, dadosApi) {
+function subirAplicacao(baseUrl, dadosApi, preparar = null) {
   const { document, registry } = criarDom();
 
   const fetchStub = async (caminho, opts = {}) => {
@@ -133,6 +162,10 @@ function subirAplicacao(baseUrl, dadosApi) {
   contexto.location = { href: '' };
   vm.createContext(contexto);
 
+  // Permite montar o pedaço de DOM que vem do HTML (botões de granularidade, por
+  // exemplo) antes que o boot registre os listeners — igual ao navegador.
+  if (preparar) preparar({ document, registry, criarElemento });
+
   for (const arquivo of ['js/graficos.js', 'js/aplicacao.js']) {
     const codigo = fs.readFileSync(path.join(PUBLIC, arquivo), 'utf8');
     vm.runInContext(codigo, contexto, { filename: arquivo });
@@ -148,6 +181,11 @@ async function esperar(condicao, ms = 4000) {
     await new Promise((r) => setTimeout(r, 20));
   }
   return false;
+}
+
+/** Espera o boot (carregarCadastros) terminar — sinal: nome da fábrica no cabeçalho. */
+function aguardarBoot(registry) {
+  return esperar(() => (registry.get('#nome-fabrica')?.textContent || '').length > 0);
 }
 
 /* ================================================================== testes === */
@@ -167,6 +205,9 @@ test.before(async () => {
 
   // Respostas reais da API, gravadas para alimentar o frontend.
   const get = async (p) => (await fetch(base + p)).json();
+  const api2 = async (p, corpo) => (await fetch(base + p, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo),
+  })).json();
   dadosApi = {
     '/api/catalogos': await get('/api/catalogos'),
     '/api/turnos': await get('/api/turnos'),
@@ -174,6 +215,16 @@ test.before(async () => {
     '/api/modelos': await get('/api/modelos'),
     '/api/dashboard': await get('/api/dashboard'),
     '/api/apontamentos': await get('/api/apontamentos?limite=400'),
+    '/api/equipes': await get('/api/equipes'),
+    '/api/operadores': await get('/api/operadores'),
+    '/api/acompanhamento': await get('/api/acompanhamento'),
+    '/api/modelos/1/sequencia': await get('/api/modelos/1/sequencia'),
+    '/api/cronometragens': await get('/api/cronometragens?modeloId=1'),
+    '/api/balancos': [],
+    '/api/balanceamento/simular': await api2(
+      '/api/balanceamento/simular',
+      { modelo_id: 1, meta_pecas_hora: 60, minutos_disponiveis: 420, max_postos: 0 }
+    ),
   };
 });
 
@@ -181,7 +232,7 @@ test.after(() => { if (server) server.close(); });
 
 test('módulo de gráficos é exportado com as funções usadas pela interface', () => {
   const { contexto } = subirAplicacao(base, dadosApi);
-  for (const fn of ['gauge', 'lineChart', 'pareto', 'barraEmpilhada', 'corPorMeta']) {
+  for (const fn of ['gauge', 'lineChart', 'pareto', 'barraEmpilhada', 'barChart', 'corPorMeta']) {
     assert.equal(typeof contexto.window.Graficos[fn], 'function', `Graficos.${fn} deve existir`);
   }
 });
@@ -397,4 +448,264 @@ test('erros de API são avisados ao usuário sem derrubar a aplicação', async 
   assert.ok(mostrou, 'aviso de erro exibido');
   assert.match(registry.get('#aviso').className, /erro/);
   assert.match(registry.get('#aviso').textContent, /Falha ao carregar/);
+});
+
+/* ========================= módulos novos: cronometragem / acompanhamento == */
+
+test('barChart desenha colunas, linha de eficiência e eixo duplo sem NaN', () => {
+  const { contexto } = subirAplicacao(base, dadosApi);
+  const alvo = criarElementoParaTeste();
+  contexto.window.Graficos.barChart(alvo, {
+    labels: ['01/08', '02/08', '03/08'],
+    valores: [1200, 980, 1540],
+    nomeBarra: 'Peças por dia',
+    linhaValores: [82, 76, 91],
+    nomeLinha: 'Eficiência',
+    meta: 85,
+    unidade: 'peças',
+  });
+
+  const svgEl = alvo.children.find((c) => c.tagName === 'SVG');
+  assert.ok(svgEl, 'deve criar um <svg>');
+  const retangulos = svgEl.children.filter((c) => c.tagName === 'RECT');
+  assert.equal(retangulos.length, 3, 'uma coluna por período');
+  for (const r of retangulos) {
+    assert.ok(Number(r._attrs.height) >= 0, 'altura não negativa');
+    assert.ok(!String(r._attrs.y).includes('NaN'), 'y sem NaN');
+  }
+  const polilinhas = svgEl.children.filter((c) => c.tagName === 'POLYLINE');
+  assert.equal(polilinhas.length, 1, 'linha de eficiência');
+  assert.ok(!polilinhas[0]._attrs.points.includes('NaN'), 'pontos sem NaN');
+  const metas = svgEl.children.filter((c) => c.tagName === 'LINE' && c._attrs.class === 'linha-meta');
+  assert.equal(metas.length, 1, 'linha de meta desenhada');
+  assert.match(alvo.innerHTML + alvo.children.length, /\d/);
+});
+
+test('barChart sem dados exibe o estado vazio em vez de gráfico quebrado', () => {
+  const { contexto } = subirAplicacao(base, dadosApi);
+  const alvo = criarElementoParaTeste();
+  contexto.window.Graficos.barChart(alvo, { labels: [], valores: [] });
+  assert.ok(!alvo.children.some((c) => c.tagName === 'SVG'), 'nenhum <svg> criado');
+  assert.equal(alvo.children.length, 1, 'apenas o aviso de vazio');
+  assert.equal(alvo.children[0].className, 'grafico-vazio');
+  assert.equal(alvo.children[0].textContent, 'Sem dados no período selecionado');
+});
+
+test('acompanhamento renderiza KPIs, série diária e ranking individual', async () => {
+  const { contexto, registry } = subirAplicacao(base, dadosApi);
+  await contexto.carregarAcompanhamento();
+
+  const kpis = registry.get('#kpis-acomp').innerHTML;
+  assert.match(kpis, /Peças produzidas/);
+  assert.match(kpis, /Eficiência média/);
+  assert.match(kpis, /Produtividade/);
+  assert.match(kpis, /Operadores/);
+  assert.doesNotMatch(kpis, /NaN|undefined/, 'KPIs sem NaN/undefined');
+
+  const serie = registry.get('#tabela-acomp-serie tbody').innerHTML;
+  const linhas = serie.split('<tr>').length - 1;
+  assert.equal(linhas, 45, 'uma linha por dia semeado');
+  assert.doesNotMatch(serie, /NaN|undefined/);
+
+  const individual = registry.get('#tabela-acomp-operador tbody').innerHTML;
+  assert.equal(individual.split('<tr>').length - 1, 36, 'um operador por linha');
+  assert.match(individual, /posto/i, 'base do tempo padrão exibida');
+
+  const equipes = registry.get('#tabela-acomp-equipe tbody').innerHTML;
+  assert.equal(equipes.split('<tr>').length - 1, 3, 'três equipes');
+  assert.equal(registry.get('#tabela-acomp-modelo tbody').innerHTML.split('<tr>').length - 1, 10);
+
+  // o gráfico de equipes foi desenhado em SVG
+  const caixaEquipes = registry.get('#grafico-equipes');
+  assert.ok(caixaEquipes.children.some((c) => c.tagName === 'SVG'), 'gráfico de equipes criado');
+});
+
+test('alternar a granularidade troca a série de diária para mensal', async () => {
+  const { contexto, registry } = subirAplicacao(base, dadosApi, ({ document, criarElemento: novo }) => {
+    // os botões vêm do HTML; o harness precisa deles antes do boot registrar os cliques
+    const caixa = document.querySelector('#granularidade');
+    for (const gran of ['dia', 'mes']) {
+      const b = novo('button');
+      b.dataset.gran = gran;
+      caixa.appendChild(b);
+    }
+  });
+  await contexto.carregarAcompanhamento();
+
+  const diaria = registry.get('#tabela-acomp-serie tbody').innerHTML;
+  assert.equal(diaria.split('<tr>').length - 1, 45, 'começa na visão diária');
+  assert.equal(registry.get('#titulo-serie-acomp').textContent, 'Produção diária');
+
+  const [, botaoMensal] = registry.get('#granularidade').children;
+  botaoMensal.dispatch('click', {});
+
+  assert.equal(registry.get('#titulo-serie-acomp').textContent, 'Produção mensal');
+  const mensal = registry.get('#tabela-acomp-serie tbody').innerHTML;
+  assert.equal(mensal.split('<tr>').length - 1, 3, 'três linhas na visão mensal');
+  assert.match(mensal, /2026-0[789]/, 'rótulo do mês presente');
+  assert.ok(botaoMensal.classList.contains('ativo'), 'botão mensal marcado como ativo');
+});
+
+test('prévia de cronometragem aplica ritmo e tolerância sobre a média válida', () => {
+  const { contexto, document, registry } = subirAplicacao(base, dadosApi);
+  document.querySelector('#cm-leituras').value = '28.4, 29.1, 27.9, 30.2, 28.8, 29.5';
+  document.querySelector('#cm-ritmo').value = '1.00';
+  document.querySelector('#cm-tolerancia').value = '12';
+
+  contexto.preverCronometragem();
+  const previa = registry.get('#cm-previa').innerHTML;
+
+  // TO = 173.9/6 = 28.983 s ; TN = TO×1.00 ; TP = TN×1.12 = 32.461 s
+  assert.match(previa, /28\.98 s/, 'tempo observado médio');
+  assert.match(previa, /32\.46 s/, 'tempo padrão com 12% de tolerância');
+  assert.match(previa, /6 de 6/, 'nenhuma leitura descartada neste conjunto');
+  assert.doesNotMatch(previa, /NaN/);
+});
+
+test('prévia de cronometragem descarta leituras discrepantes e avisa', () => {
+  const { contexto, document, registry } = subirAplicacao(base, dadosApi);
+  document.querySelector('#cm-leituras').value = '28, 29, 28.5, 29.5, 80';
+  document.querySelector('#cm-ritmo').value = '0.9';
+  document.querySelector('#cm-tolerancia').value = '0';
+  contexto.preverCronometragem();
+
+  const previa = registry.get('#cm-previa').innerHTML;
+  assert.match(previa, /4 de 5/, 'a leitura de 80 s é excluída');
+  assert.match(previa, /fora de ±25% da mediana/, 'aviso ao operador');
+  // TO das válidas = (28+29+28.5+29.5)/4 = 28.75 ; TN = 28.75×0.9 = 25.875
+  assert.match(previa, /28\.75 s/, 'média das leituras válidas');
+  assert.match(previa, /25\.88 s/, 'tempo normal com ritmo 0,90');
+});
+
+test('sequência operacional mostra o SAM da sequência e a divergência', async () => {
+  const { contexto, document, registry } = subirAplicacao(base, dadosApi);
+  document.querySelector('#cr-modelo').value = '1';
+  await contexto.carregarSequencia();
+
+  const resumo = registry.get('#cr-resumo-sam').innerHTML;
+  assert.match(resumo, /SAM pela sequência/);
+  assert.match(resumo, /SAM cadastrado/);
+  assert.match(resumo, /Divergência/);
+  assert.doesNotMatch(resumo, /NaN|undefined/);
+
+  const linhas = registry.get('#tabela-sequencia tbody').innerHTML;
+  const total = dadosApi['/api/modelos/1/sequencia'].operacoes.length;
+  assert.equal(linhas.split('<tr>').length - 1, total, 'uma linha por operação');
+  assert.match(linhas, /data-cronometrar=/, 'atalho para cronometrar a operação');
+  assert.match(linhas, /leituras/, 'situação da cronometragem visível');
+
+  // o select de operações do formulário foi populado a partir da mesma sequência
+  const opcoes = registry.get('#cm-operacao').innerHTML;
+  assert.equal(opcoes.split('<option').length - 1, total);
+});
+
+test('balanceamento desenha os postos, marca o gargalo e lista recomendações', async () => {
+  const { contexto, document, registry } = subirAplicacao(base, dadosApi);
+  assert.ok(await aguardarBoot(registry), 'boot concluído (seletores de modelo populados)');
+  // os campos do formulário só entram no registry quando a aplicação os consulta;
+  // usar document.querySelector aqui devolve exatamente o mesmo elemento.
+  document.querySelector('#bl-modelo').value = '1';
+  document.querySelector('#bl-meta').value = '60';
+  document.querySelector('#bl-minutos').value = '420';
+  document.querySelector('#bl-maxpostos').value = '0';
+
+  await contexto.simularBalanceamento(null);
+
+  const html = registry.get('#resultado-balanceamento').innerHTML;
+  const postos = (html.match(/class="posto[ "]/g) || []).length;
+  const esperados = dadosApi['/api/balanceamento/simular'].resultado.postosUsados;
+  assert.equal(postos, esperados, `um cartão por posto (esperado ${esperados})`);
+  assert.equal((html.match(/class="posto gargalo"/g) || []).length, 1, 'exatamente um gargalo');
+  assert.match(html, /gargalo/, 'posto gargalo destacado');
+  assert.match(html, /Pitch time/);
+  assert.match(html, /Eficiência do balanceamento/);
+  assert.match(html, /Diagnóstico/);
+  assert.match(html, /CAM-100/, 'modelo identificado no resultado');
+  assert.doesNotMatch(html, /NaN|undefined/);
+
+  // a soma dos tempos de posto deve fechar com o SAM exibido
+  const res = dadosApi['/api/balanceamento/simular'].resultado;
+  const soma = res.estacoes.reduce((s, e) => s + e.tempo, 0);
+  assert.ok(Math.abs(soma - res.sam) < 1e-9, 'conservação do SAM entre os postos');
+});
+
+test('equipes e operadores são listados a partir do cadastro real', async () => {
+  const { contexto, registry } = subirAplicacao(base, dadosApi);
+  assert.ok(await aguardarBoot(registry), 'boot concluído (equipes carregadas)');
+  contexto.renderEquipes();
+  contexto.renderOperadores();
+
+  const equipes = registry.get('#tabela-equipes tbody').innerHTML;
+  assert.equal(equipes.split('<tr>').length - 1, 3, 'três equipes');
+  assert.match(equipes, /Equipe Alfa/);
+  assert.match(equipes, /data-editar-eq=/);
+
+  const operadores = registry.get('#tabela-operadores tbody').innerHTML;
+  assert.equal(operadores.split('<tr>').length - 1, 36, 'trinta e seis operadores');
+  assert.match(operadores, /data-editar-opr=/);
+  assert.doesNotMatch(operadores, /NaN|undefined/);
+
+  // os selects derivados foram populados no boot
+  const filtro = registry.get('#acomp-equipe').innerHTML;
+  assert.equal(filtro.split('<option').length - 1, 4, 'todas + 3 equipes');
+  assert.equal(registry.get('#acomp-operador').innerHTML.split('<option').length - 1, 37);
+});
+
+test('lançamento de produção individual é lido de volta para envio à API', async () => {
+  const { contexto, registry } = subirAplicacao(base, dadosApi);
+  assert.ok(await aguardarBoot(registry), 'boot concluído (operadores carregados)');
+
+  contexto.adicionarLinhaProducao({ operador_id: 5 });
+  contexto.adicionarLinhaProducao({ operador_id: 6 });
+
+  const lista = registry.get('#lista-producao');
+  assert.equal(lista.children.length, 2, 'duas linhas de operador');
+  assert.match(lista.children[0].innerHTML, /pr-padrao/, 'campo de tempo padrão presente');
+
+  // O DOM mínimo não interpreta atributos value= dentro de innerHTML, então os
+  // campos são preenchidos aqui exatamente como o usuário faria digitando.
+  const preencher = (linha, v) => {
+    for (const [sel, val] of Object.entries(v)) linha.querySelector(sel).value = val;
+  };
+  preencher(lista.children[0], { '.pr-minutos': '420', '.pr-pecas': '320', '.pr-defeitos': '4', '.pr-padrao': '0.9' });
+  preencher(lista.children[1], { '.pr-minutos': '420', '.pr-pecas': '298', '.pr-defeitos': '1' });
+  contexto.atualizarResumoProducao();
+
+  const itens = contexto.lerProducao();
+  assert.equal(itens.length, 2, 'duas linhas lidas');
+  // os objetos nascem no contexto vm (outro realm), então são espalhados aqui
+  assert.deepEqual({ ...itens[0] }, {
+    operador_id: 5, minutos: 420, pecas: 320, defeitos: 4, tempo_padrao_min: 0.9,
+  });
+  assert.deepEqual({ ...itens[1] }, {
+    operador_id: 6, minutos: 420, pecas: 298, defeitos: 1, tempo_padrao_min: null,
+  }, 'tempo padrão opcional vira null');
+  assert.match(registry.get('#resumo-producao').textContent, /618 peças/, 'resumo soma as peças');
+  assert.match(registry.get('#resumo-producao').textContent, /14 h/, 'resumo soma os minutos (840 min = 14 h)');
+
+  // linhas sem operador selecionado não podem chegar à API
+  contexto.adicionarLinhaProducao({});
+  assert.equal(contexto.lerProducao().length, 2, 'linha sem operador é descartada');
+});
+
+test('distribuição escolhe a equipe do setor com o mesmo número de operadores', async () => {
+  const { contexto, registry } = subirAplicacao(base, dadosApi);
+  assert.ok(await aguardarBoot(registry), 'boot concluído');
+  const maquinas = dadosApi['/api/maquinas'];
+
+  // as três linhas de costura casam 1:1 com as equipes pelo número de operadores
+  for (const [linha, equipe, total] of [['Linha 1', 'Equipe Alfa', 14], ['Linha 2', 'Equipe Beta', 12], ['Linha 3', 'Equipe Gama', 10]]) {
+    const escolhida = contexto.equipeDaLinha(maquinas.find((m) => m.nome.startsWith(linha)));
+    assert.equal(escolhida.equipe.nome, equipe, `${linha} → ${equipe}`);
+    assert.equal(escolhida.operadores.length, total, `${linha} tem ${total} operadores`);
+  }
+
+  // setor sem equipe cadastrada cai no conjunto completo, sem quebrar
+  const corte = contexto.equipeDaLinha(maquinas.find((m) => m.setor === 'Corte'));
+  assert.equal(corte.equipe, null, 'nenhuma equipe no setor Corte');
+  assert.equal(corte.operadores.length, dadosApi['/api/operadores'].length, 'usa todos os operadores');
+
+  // sem célula selecionada também não pode explodir
+  const geral = contexto.equipeDaLinha(null);
+  assert.ok(geral.operadores.length > 0, 'devolve operadores mesmo sem célula');
 });

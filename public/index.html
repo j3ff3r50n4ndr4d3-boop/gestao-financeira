@@ -38,9 +38,13 @@
 
 <nav class="abas" role="tablist">
   <button class="aba ativa" data-aba="painel" role="tab">📊 Painel</button>
+  <button class="aba" data-aba="acompanhamento" role="tab">📈 Acompanhamento</button>
   <button class="aba" data-aba="apontamentos" role="tab">✍️ Apontamentos</button>
-  <button class="aba" data-aba="linhas" role="tab">🏭 Linhas e Células</button>
-  <button class="aba" data-aba="modelos" role="tab">👕 Modelos e SAM</button>
+  <button class="aba" data-aba="cronometragem" role="tab">⏱️ Cronometragem</button>
+  <button class="aba" data-aba="balanceamento" role="tab">⚖️ Balanceamento</button>
+  <button class="aba" data-aba="linhas" role="tab">🏭 Linhas</button>
+  <button class="aba" data-aba="modelos" role="tab">👕 Modelos</button>
+  <button class="aba" data-aba="equipes" role="tab">👥 Equipes</button>
   <button class="aba" data-aba="turnos" role="tab">🕐 Turnos</button>
   <button class="aba" data-aba="ajuda" role="tab">❓ Como calcular</button>
 </nav>
@@ -123,6 +127,95 @@
     </div>
   </section>
 
+  <!-- ======================== ACOMPANHAMENTO ======================== -->
+  <section class="painel" id="view-acompanhamento">
+    <div class="cartao">
+      <div class="cartao-cabecalho">
+        <h2>Acompanhamento da produção</h2>
+        <div class="filtros-acompanhamento">
+          <div class="segmentado" id="granularidade">
+            <button type="button" class="ativo" data-gran="dia">Diário</button>
+            <button type="button" data-gran="mes">Mensal</button>
+          </div>
+          <select id="acomp-equipe" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option></select>
+          <select id="acomp-operador" aria-label="Filtrar por operador"><option value="">Todos os operadores</option></select>
+        </div>
+      </div>
+      <div class="kpis" id="kpis-acomp"></div>
+      <div id="grafico-acomp" class="grafico-caixa"></div>
+    </div>
+
+    <div class="cartao">
+      <div class="cartao-cabecalho">
+        <h2 id="titulo-serie-acomp">Produção diária</h2>
+        <span class="dica">peças, eficiência e refugo por período</span>
+      </div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-acomp-serie">
+          <thead>
+            <tr>
+              <th>Período</th>
+              <th class="num">Operadores</th>
+              <th class="num">Peças</th>
+              <th class="num">Peças/dia útil</th>
+              <th class="num">Horas</th>
+              <th class="num">Peças/h</th>
+              <th class="num">Eficiência</th>
+              <th class="num">Defeitos</th>
+              <th>Desempenho</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="duas-colunas">
+      <div class="cartao">
+        <div class="cartao-cabecalho"><h2>Desempenho individual</h2><span class="dica">ordenado por eficiência</span></div>
+        <div class="tabela-rolagem">
+          <table class="tabela" id="tabela-acomp-operador">
+            <thead>
+              <tr>
+                <th>Operador</th><th>Equipe</th>
+                <th class="num">Dias</th><th class="num">Peças</th>
+                <th class="num">Peças/h</th><th class="num">Eficiência</th><th class="num">Refugo</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="cartao">
+        <div class="cartao-cabecalho"><h2>Desempenho por equipe</h2></div>
+        <div id="grafico-equipes"></div>
+        <div class="tabela-rolagem">
+          <table class="tabela" id="tabela-acomp-equipe">
+            <thead>
+              <tr>
+                <th>Equipe</th><th class="num">Operadores</th><th class="num">Peças</th>
+                <th class="num">Peças/h</th><th class="num">Eficiência</th><th class="num">Refugo</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Produção por modelo</h2></div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-acomp-modelo">
+          <thead>
+            <tr><th>Modelo</th><th class="num">Peças</th><th class="num">Peças/h</th><th class="num">Eficiência</th><th class="num">Refugo</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- ========================= APONTAMENTOS ========================= -->
   <section class="painel" id="view-apontamentos">
     <div class="cartao">
@@ -184,6 +277,23 @@
           <button type="button" class="btn btn-secundario" id="btn-add-parada">+ Adicionar parada</button>
         </div>
 
+        <div class="bloco-paradas">
+          <div class="bloco-paradas-cabecalho">
+            <h3>Produção individual (opcional)</h3>
+            <span class="dica" id="resumo-producao">nenhum operador lançado</span>
+          </div>
+          <p class="dica">
+            Registre quanto cada operador produziu no turno. A eficiência individual é
+            <strong>peças × tempo padrão ÷ minutos trabalhados</strong>. O botão de distribuição
+            usa o balanceamento da sequência para atribuir um posto a cada operador.
+          </p>
+          <div id="lista-producao" class="lista-paradas"></div>
+          <div class="acoes-formulario">
+            <button type="button" class="btn btn-secundario" id="btn-add-producao">+ Adicionar operador</button>
+            <button type="button" class="btn btn-secundario" id="btn-distribuir-producao">⚡ Distribuir por balanceamento</button>
+          </div>
+        </div>
+
         <div class="campo campo-largo">
           <label for="ap-observacao">Observação</label>
           <textarea id="ap-observacao" rows="2" maxlength="500" placeholder="Ocorrências do turno"></textarea>
@@ -212,6 +322,124 @@
               <th class="num">OEE</th><th class="num">Peças/h</th>
               <th>Ações</th>
             </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== CRONOMETRAGEM ========================= -->
+  <section class="painel" id="view-cronometragem">
+    <div class="cartao">
+      <div class="cartao-cabecalho">
+        <h2>Sequência operacional</h2>
+        <select id="cr-modelo" aria-label="Modelo"></select>
+      </div>
+      <div id="cr-resumo-sam" class="resumo-sam"></div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-sequencia">
+          <thead>
+            <tr>
+              <th class="num">Seq</th><th>Código</th><th>Operação</th><th>Máquina</th>
+              <th class="num">Tempo padrão</th><th class="num">Peças/h</th>
+              <th>Cronometragem</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="acoes-formulario">
+        <button type="button" class="btn btn-secundario" id="btn-recalcular-sam">🔄 Recalcular SAM a partir da sequência</button>
+      </div>
+    </div>
+
+    <div class="duas-colunas">
+      <div class="cartao">
+        <div class="cartao-cabecalho"><h2>Nova operação</h2></div>
+        <form id="form-operacao" class="formulario" autocomplete="off">
+          <input type="hidden" id="op-id">
+          <div class="grade-campos">
+            <div class="campo"><label for="op-sequencia">Sequência</label><input type="number" id="op-sequencia" min="1" step="1" value="1" required></div>
+            <div class="campo"><label for="op-descricao">Descrição</label><input type="text" id="op-descricao" required placeholder="Pregar gola"></div>
+            <div class="campo"><label for="op-maquina">Máquina</label><input type="text" id="op-maquina" list="lista-maquinas-operacao" placeholder="Reta"><datalist id="lista-maquinas-operacao"></datalist></div>
+            <div class="campo"><label for="op-tempo">Tempo padrão (seg)</label><input type="number" id="op-tempo" min="0" step="0.1" value="30"></div>
+            <div class="campo"><label for="op-dificuldade">Dificuldade</label>
+              <select id="op-dificuldade">
+                <option value="1">1 — muito fácil</option><option value="2" selected>2 — fácil</option>
+                <option value="3">3 — média</option><option value="4">4 — difícil</option><option value="5">5 — muito difícil</option>
+              </select>
+            </div>
+          </div>
+          <p class="dica">O tempo padrão informado aqui é provisório: ao registrar uma cronometragem ele é substituído pelo valor calculado a partir das leituras.</p>
+          <div class="acoes-formulario">
+            <button type="submit" class="btn btn-primario">💾 Adicionar operação</button>
+            <button type="button" class="btn btn-fantasma" id="btn-cancelar-operacao">Limpar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="cartao">
+        <div class="cartao-cabecalho"><h2>Cronometrar operação</h2></div>
+        <form id="form-cronometragem" class="formulario" autocomplete="off">
+          <div class="grade-campos">
+            <div class="campo campo-largo"><label for="cm-operacao">Operação</label><select id="cm-operacao" required></select></div>
+            <div class="campo"><label for="cm-operador">Operador observado</label><select id="cm-operador"><option value="">— não informado —</option></select></div>
+            <div class="campo"><label for="cm-data">Data</label><input type="date" id="cm-data" required></div>
+            <div class="campo"><label for="cm-ritmo">Fator de ritmo</label><input type="number" id="cm-ritmo" min="0.3" max="2" step="0.01" value="1.00"></div>
+            <div class="campo"><label for="cm-tolerancia">Tolerâncias (%)</label><input type="number" id="cm-tolerancia" min="0" max="100" step="0.5" value="12"></div>
+          </div>
+          <div class="campo campo-largo">
+            <label for="cm-leituras">Leituras do cronômetro (segundos, separadas por vírgula ou espaço)</label>
+            <input type="text" id="cm-leituras" placeholder="28.4, 29.1, 27.9, 30.2, 28.8, 29.5" required>
+          </div>
+          <div id="cm-previa" class="previa-cronometragem"></div>
+          <div class="acoes-formulario">
+            <button type="submit" class="btn btn-primario">⏱️ Registrar cronometragem</button>
+          </div>
+        </form>
+        <div class="tabela-rolagem" style="margin-top:14px">
+          <table class="tabela tabela-compacta" id="tabela-cronometragens">
+            <thead><tr><th>Data</th><th>Operação</th><th class="num">Leituras</th><th class="num">TO (s)</th><th class="num">Ritmo</th><th class="num">TP (s)</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== BALANCEAMENTO ========================= -->
+  <section class="painel" id="view-balanceamento">
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Balanceamento de linha</h2></div>
+      <form id="form-balanceamento" class="formulario" autocomplete="off">
+        <div class="grade-campos">
+          <div class="campo"><label for="bl-modelo">Modelo</label><select id="bl-modelo" required></select></div>
+          <div class="campo"><label for="bl-meta">Meta (peças/hora)</label><input type="number" id="bl-meta" min="1" step="1" value="60" required></div>
+          <div class="campo"><label for="bl-minutos">Minutos disponíveis</label><input type="number" id="bl-minutos" min="1" step="1" value="420"></div>
+          <div class="campo"><label for="bl-maxpostos">Máximo de postos (0 = livre)</label><input type="number" id="bl-maxpostos" min="0" step="1" value="0"></div>
+          <div class="campo"><label for="bl-nome">Nome para salvar</label><input type="text" id="bl-nome" placeholder="Linha 1 — turno 1"></div>
+        </div>
+        <p class="dica">
+          O <strong>pitch time</strong> é o tempo de ciclo exigido pela meta (60 ÷ peças/hora).
+          As operações são distribuídas entre postos respeitando a ordem da sequência,
+          pelo método do maior candidato (Largest Candidate Rule).
+        </p>
+        <div class="acoes-formulario">
+          <button type="submit" class="btn btn-primario">⚖️ Calcular balanceamento</button>
+          <button type="button" class="btn btn-secundario" id="btn-salvar-balanceamento">💾 Salvar cenário</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="resultado-balanceamento"></div>
+
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Cenários salvos</h2></div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-balancos">
+          <thead>
+            <tr><th>Nome</th><th>Modelo</th><th class="num">Meta</th><th class="num">Postos</th><th class="num">Peças/h</th><th class="num">Eficiência</th><th>Ações</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -290,6 +518,58 @@
           <thead><tr><th>Código</th><th>Descrição</th><th>Categoria</th><th class="num">SAM (min)</th><th class="num">Preço</th><th>Ações</th></tr></thead>
           <tbody></tbody>
         </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ EQUIPES =========================== -->
+  <section class="painel" id="view-equipes">
+    <div class="duas-colunas">
+      <div class="cartao">
+        <div class="cartao-cabecalho"><h2>Equipe</h2></div>
+        <form id="form-equipe" class="formulario" autocomplete="off">
+          <input type="hidden" id="eq-id">
+          <div class="grade-campos">
+            <div class="campo"><label for="eq-nome">Nome</label><input type="text" id="eq-nome" required placeholder="Equipe Alfa"></div>
+            <div class="campo"><label for="eq-setor">Setor</label><input type="text" id="eq-setor" list="lista-setores-eq" placeholder="Costura"><datalist id="lista-setores-eq"></datalist></div>
+            <div class="campo"><label for="eq-lider">Líder</label><input type="text" id="eq-lider" placeholder="Nome do encarregado"></div>
+          </div>
+          <div class="acoes-formulario">
+            <button type="submit" class="btn btn-primario">💾 Salvar equipe</button>
+            <button type="button" class="btn btn-fantasma" id="btn-cancelar-equipe">Limpar</button>
+          </div>
+        </form>
+        <div class="tabela-rolagem" style="margin-top:14px">
+          <table class="tabela tabela-compacta" id="tabela-equipes">
+            <thead><tr><th>Equipe</th><th>Setor</th><th>Líder</th><th class="num">Operadores</th><th>Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="cartao">
+        <div class="cartao-cabecalho"><h2>Operador</h2></div>
+        <form id="form-operador" class="formulario" autocomplete="off">
+          <input type="hidden" id="opr-id">
+          <div class="grade-campos">
+            <div class="campo"><label for="opr-nome">Nome</label><input type="text" id="opr-nome" required></div>
+            <div class="campo"><label for="opr-matricula">Matrícula</label><input type="text" id="opr-matricula" placeholder="OP-001"></div>
+            <div class="campo"><label for="opr-equipe">Equipe</label><select id="opr-equipe"><option value="">— sem equipe —</option></select></div>
+            <div class="campo"><label for="opr-funcao">Função</label><input type="text" id="opr-funcao" placeholder="Costureira(o)"></div>
+            <div class="campo"><label for="opr-maquina">Máquina</label><input type="text" id="opr-maquina" placeholder="Reta"></div>
+            <div class="campo"><label for="opr-custo">Custo-hora (R$)</label><input type="number" id="opr-custo" min="0" step="0.01" value="0"></div>
+          </div>
+          <div class="acoes-formulario">
+            <button type="submit" class="btn btn-primario">💾 Salvar operador</button>
+            <button type="button" class="btn btn-fantasma" id="btn-cancelar-operador">Limpar</button>
+          </div>
+        </form>
+        <div class="tabela-rolagem" style="margin-top:14px">
+          <table class="tabela tabela-compacta" id="tabela-operadores">
+            <thead><tr><th>Nome</th><th>Matrícula</th><th>Equipe</th><th>Função</th><th class="num">Custo/h</th><th>Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </section>

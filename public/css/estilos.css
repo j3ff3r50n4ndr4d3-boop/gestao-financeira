@@ -410,3 +410,78 @@ main { padding: 20px 22px 60px; max-width: 1500px; margin: 0 auto; }
   .cartao { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
   body { background: #fff; }
 }
+
+/* ------------------------------------------------- acompanhamento / novos -- */
+
+.filtros-acompanhamento { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.filtros-acompanhamento select {
+  padding: 7px 10px; border: 1px solid var(--linha); border-radius: 8px;
+  font-size: .85rem; font-family: inherit; background: #fff; color: var(--tinta);
+}
+
+.segmentado { display: inline-flex; border: 1px solid var(--linha); border-radius: 8px; overflow: hidden; }
+.segmentado button {
+  background: #fff; border: none; padding: 7px 16px; font-size: .83rem; font-weight: 700;
+  font-family: inherit; color: var(--tinta-3); cursor: pointer; transition: background .15s, color .15s;
+}
+.segmentado button + button { border-left: 1px solid var(--linha); }
+.segmentado button.ativo { background: var(--marca); color: #fff; }
+.segmentado button:not(.ativo):hover { background: #f1f5f9; }
+
+.resumo-sam {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px; margin-bottom: 14px;
+}
+.resumo-sam .item { background: #f8fafc; border-radius: 8px; padding: 10px 12px; }
+.resumo-sam .item .rotulo { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: var(--tinta-3); }
+.resumo-sam .item .valor { font-size: 1.15rem; font-weight: 700; }
+.resumo-sam .item.alerta { background: #fef3c7; }
+.resumo-sam .item.alerta .valor { color: #92400e; }
+
+.previa-cronometragem {
+  background: #f8fafc; border-left: 4px solid var(--marca-clara);
+  border-radius: 8px; padding: 12px 14px; margin: 12px 0; font-size: .86rem;
+}
+.previa-cronometragem:empty { display: none; }
+.previa-cronometragem .linha { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+.previa-cronometragem .linha strong { font-variant-numeric: tabular-nums; }
+.previa-cronometragem .aviso-cron { color: #92400e; margin-top: 6px; font-size: .8rem; }
+
+/* --------------------------------------------------------- balanceamento -- */
+
+.resumo-balanceamento {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 10px; margin-bottom: 16px;
+}
+.resumo-balanceamento .item { background: #f8fafc; border-radius: 8px; padding: 10px 12px; border-left: 3px solid var(--marca); }
+.resumo-balanceamento .item .rotulo { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: var(--tinta-3); }
+.resumo-balanceamento .item .valor { font-size: 1.2rem; font-weight: 700; }
+.resumo-balanceamento .item.destaque { border-left-color: var(--critico); }
+.resumo-balanceamento .item.ok { border-left-color: var(--ok); }
+
+.postos { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 8px; }
+.posto {
+  border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px;
+  background: #fff; display: flex; flex-direction: column; gap: 6px;
+}
+.posto.gargalo { border-color: var(--critico); box-shadow: 0 0 0 2px rgba(220, 38, 38, .12); }
+.posto-cabecalho { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.posto-cabecalho .numero { font-weight: 700; font-size: .88rem; }
+.posto-cabecalho .tempo { font-size: .8rem; color: var(--tinta-3); font-variant-numeric: tabular-nums; }
+.posto-barra { height: 8px; border-radius: 5px; background: #eef2f6; overflow: hidden; }
+.posto-barra > span { display: block; height: 100%; border-radius: 5px; }
+.posto-ops { list-style: none; margin: 0; padding: 0; font-size: .8rem; color: var(--tinta-2); }
+.posto-ops li { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px dashed #f1f5f9; }
+.posto-ops li span:last-child { font-variant-numeric: tabular-nums; color: var(--tinta-3); }
+.posto-ocioso { font-size: .74rem; color: var(--tinta-3); }
+
+.recomendacoes { background: #fffbeb; border-left: 4px solid var(--atencao); border-radius: 8px; padding: 12px 16px; margin-top: 14px; }
+.recomendacoes h3 { margin: 0 0 6px; font-size: .9rem; }
+.recomendacoes ul { margin: 0; padding-left: 18px; font-size: .85rem; color: var(--tinta-2); }
+.recomendacoes li { margin-bottom: 3px; }
+
+.tag-base {
+  display: inline-block; font-size: .65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; padding: 1px 6px; border-radius: 4px; background: #e0f2fe; color: #075985;
+}
+.aviso.atencao { background: var(--atencao); color: #1f2937; }

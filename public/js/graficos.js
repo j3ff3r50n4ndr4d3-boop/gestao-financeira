@@ -347,4 +347,86 @@ function barraEmpilhada(el, cfg) {
   el.appendChild(legenda);
 }
 
-window.Graficos = { gauge, lineChart, pareto, barraEmpilhada, corPorMeta };
+/* ------------------------------------------------ coluna + linha dupla ----- */
+
+/**
+ * Colunas no eixo esquerdo com uma linha opcional no eixo direito (0–100%).
+ * Usada no acompanhamento: peças por período (colunas) e eficiência (linha).
+ * @param {HTMLElement} el
+ * @param {{labels:string[], valores:number[], cor?:string, nomeBarra?:string,
+ *          linhaValores?:number[], linhaCor?:string, nomeLinha?:string,
+ *          meta?:number, altura?:number, unidade?:string}} cfg
+ */
+function barChart(el, cfg) {
+  if (!limpar(el)) return;
+  const labels = cfg.labels || [];
+  if (labels.length === 0) return vazio(el, 'Sem dados no período selecionado');
+
+  const largura = 880;
+  const altura = cfg.altura || 300;
+  const m = { t: 18, r: 48, b: 44, l: 58 };
+  const w = largura - m.l - m.r;
+  const h = altura - m.t - m.b;
+
+  const maxBarra = Math.max(1, ...cfg.valores.map((v) => (Number.isFinite(v) ? v : 0))) * 1.12;
+  const larguraBarra = Math.max(3, (w / labels.length) * 0.66);
+  const cor = cfg.cor || 'var(--marca)';
+  const x = (i) => m.l + (w / labels.length) * (i + 0.5);
+  const yBarra = (v) => m.t + h - (h * Math.max(0, v)) / maxBarra;
+  const yLinha = (v) => m.t + h - (h * Math.max(0, Math.min(100, v))) / 100;
+
+  const s = svg('svg', { viewBox: `0 0 ${largura} ${altura}`, class: 'grafico-svg' });
+
+  for (let i = 0; i <= 4; i++) {
+    const yy = m.t + (h * i) / 4;
+    s.appendChild(svg('line', { x1: m.l, y1: yy, x2: largura - m.r, y2: yy, class: 'grade' }));
+    s.appendChild(
+      txt(m.l - 8, yy + 4, String(Math.round((maxBarra * (4 - i)) / 4)), { class: 'rotulo-eixo', 'text-anchor': 'end' })
+    );
+    if (cfg.linhaValores) {
+      s.appendChild(
+        txt(largura - m.r + 8, yy + 4, `${Math.round(((4 - i) / 4) * 100)}%`, { class: 'rotulo-eixo', 'text-anchor': 'start' })
+      );
+    }
+  }
+
+  if (cfg.meta !== undefined && cfg.linhaValores) {
+    s.appendChild(svg('line', { x1: m.l, y1: yLinha(cfg.meta), x2: largura - m.r, y2: yLinha(cfg.meta), class: 'linha-meta' }));
+  }
+
+  const passo = Math.max(1, Math.ceil(labels.length / 14));
+  labels.forEach((lb, i) => {
+    if (i % passo !== 0 && i !== labels.length - 1) return;
+    s.appendChild(txt(x(i), altura - m.b + 16, lb, { class: 'rotulo-eixo', 'text-anchor': 'middle' }));
+  });
+
+  cfg.valores.forEach((v, i) => {
+    if (!Number.isFinite(v)) return;
+    const alturaBarra = Math.max(0, m.t + h - yBarra(v));
+    s.appendChild(
+      svg('rect', { x: x(i) - larguraBarra / 2, y: yBarra(v), width: larguraBarra, height: alturaBarra, rx: 2, fill: cor, class: 'barra-coluna' })
+    );
+    s.appendChild(svg('title', {}, [document.createTextNode(`${labels[i]}: ${Math.round(v)} ${cfg.unidade || ''}`)]));
+  });
+
+  if (cfg.linhaValores) {
+    const pontos = cfg.linhaValores
+      .map((v, i) => (Number.isFinite(v) ? `${x(i).toFixed(2)},${yLinha(v).toFixed(2)}` : null))
+      .filter(Boolean);
+    if (pontos.length > 1) {
+      s.appendChild(svg('polyline', { points: pontos.join(' '), class: 'linha-grafico', stroke: cfg.linhaCor || 'var(--critico)' }));
+    }
+  }
+
+  el.appendChild(s);
+
+  if (cfg.linhaValores || cfg.nomeBarra) {
+    const legenda = document.createElement('div');
+    legenda.className = 'legenda-grafico';
+    if (cfg.nomeBarra) legenda.innerHTML += `<span><i style="background:${cor}"></i>${cfg.nomeBarra}</span>`;
+    if (cfg.linhaValores) legenda.innerHTML += `<span><i style="background:${cfg.linhaCor || 'var(--critico)'}"></i>${cfg.nomeLinha || 'Eficiência'}</span>`;
+    el.appendChild(legenda);
+  }
+}
+
+window.Graficos = { gauge, lineChart, pareto, barraEmpilhada, barChart, corPorMeta };

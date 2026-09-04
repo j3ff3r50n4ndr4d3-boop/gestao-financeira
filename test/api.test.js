@@ -118,8 +118,10 @@ test('POST /api/apontamentos grava, calcula OEE e devolve 201', async () => {
   const i = r.corpo.indicadores;
   // tempo planejado 420, operação 360 → A = 85,714%
   assert.ok(Math.abs(i.disponibilidadePct - (360 / 420) * 100) < 0.001);
-  // ICT = 8,5/14 min/peça → teóricas = 360/ICT → desempenho = 1000/teóricas
-  const desempenhoEsperado = (1000 * (8.5 / 14)) / 360;
+  // ICT = SAM/operadores → teóricas = 360/ICT → desempenho = 1000/teóricas.
+  // O SAM é lido da API porque ele passa a vir da sequência cronometrada.
+  const ict = modelo.sam_min / linha.operadores;
+  const desempenhoEsperado = (1000 * ict) / 360;
   assert.equal(i.desempenhoAcimaDoPadrao, true);
   assert.ok(Math.abs(i.desempenhoPct - desempenhoEsperado * 100) < 0.001,
     `desempenho cru esperado ${desempenhoEsperado * 100}, veio ${i.desempenhoPct}`);
