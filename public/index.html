@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eficiência Produtiva — OEE de Confecção</title>
+<meta name="description" content="Sistema online de medição da eficiência produtiva (OEE) para fábrica de roupas.">
+<link rel="stylesheet" href="/css/estilos.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧵</text></svg>">
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-marca">
+    <span class="topo-icone" aria-hidden="true">🧵</span>
+    <div>
+      <h1>Eficiência Produtiva</h1>
+      <p id="nome-fabrica">Confecção</p>
+    </div>
+  </div>
+
+  <div class="topo-filtros">
+    <label for="filtro-de">De</label>
+    <input type="date" id="filtro-de">
+    <label for="filtro-ate">Até</label>
+    <input type="date" id="filtro-ate">
+    <select id="filtro-linha" aria-label="Filtrar por linha">
+      <option value="">Todas as linhas</option>
+    </select>
+    <div class="atalhos-periodo">
+      <button type="button" data-periodo="7">7d</button>
+      <button type="button" data-periodo="30">30d</button>
+      <button type="button" data-periodo="90">90d</button>
+    </div>
+    <button type="button" id="btn-atualizar" class="btn btn-fantasma" title="Recarregar">↻</button>
+  </div>
+</header>
+
+<nav class="abas" role="tablist">
+  <button class="aba ativa" data-aba="painel" role="tab">📊 Painel</button>
+  <button class="aba" data-aba="apontamentos" role="tab">✍️ Apontamentos</button>
+  <button class="aba" data-aba="linhas" role="tab">🏭 Linhas e Células</button>
+  <button class="aba" data-aba="modelos" role="tab">👕 Modelos e SAM</button>
+  <button class="aba" data-aba="turnos" role="tab">🕐 Turnos</button>
+  <button class="aba" data-aba="ajuda" role="tab">❓ Como calcular</button>
+</nav>
+
+<main id="conteudo">
+
+  <!-- ============================ PAINEL ============================ -->
+  <section class="painel ativo" id="view-painel">
+    <div class="medidores" id="medidores"></div>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="cartao">
+      <div class="cartao-cabecalho">
+        <h2>Evolução do OEE</h2>
+        <div class="interruptores" id="alternar-series">
+          <label><input type="checkbox" data-serie="oee" checked> OEE</label>
+          <label><input type="checkbox" data-serie="disponibilidade"> Disponibilidade</label>
+          <label><input type="checkbox" data-serie="desempenho"> Desempenho</label>
+          <label><input type="checkbox" data-serie="qualidade"> Qualidade</label>
+        </div>
+      </div>
+      <div id="grafico-tendencia" class="grafico-caixa"></div>
+    </div>
+
+    <div class="duas-colunas">
+      <div class="cartao">
+        <div class="cartao-cabecalho"><h2>Pareto de paradas</h2><span class="dica">minutos perdidos</span></div>
+        <div id="grafico-pareto" class="grafico-caixa rolavel-x"></div>
+      </div>
+      <div class="cartao">
+        <div class="cartao-cabecalho"><h2>Composição das perdas</h2></div>
+        <div id="grafico-perdas"></div>
+        <h3>As 6 grandes perdas</h3>
+        <div id="seis-perdas"></div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cartao-cabecalho">
+        <h2>Desempenho por linha / célula</h2>
+        <span class="dica">ordenado por OEE</span>
+      </div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-ranking">
+          <thead>
+            <tr>
+              <th>Linha / Célula</th>
+              <th>Setor</th>
+              <th class="num">OEE</th>
+              <th class="num">Disponib.</th>
+              <th class="num">Desemp.</th>
+              <th class="num">Qualid.</th>
+              <th class="num">Peças</th>
+              <th class="num">Refugo</th>
+              <th class="num">Peças/h</th>
+              <th class="num">Paradas</th>
+              <th class="num">Custo da perda</th>
+              <th>Situação</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Desempenho por modelo</h2></div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-modelos-desempenho">
+          <thead>
+            <tr>
+              <th>Código</th><th>Modelo</th><th>Categoria</th>
+              <th class="num">Peças</th><th class="num">Refugo %</th>
+              <th class="num">Peças/h</th><th class="num">Desempenho</th><th class="num">OEE</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= APONTAMENTOS ========================= -->
+  <section class="painel" id="view-apontamentos">
+    <div class="cartao">
+      <div class="cartao-cabecalho">
+        <h2>Apontamento de produção</h2>
+        <div>
+          <button class="btn btn-secundario" id="btn-exportar-csv">⬇ Exportar CSV</button>
+          <button class="btn btn-primario" id="btn-novo-apontamento">+ Novo apontamento</button>
+        </div>
+      </div>
+
+      <form id="form-apontamento" class="formulario" autocomplete="off">
+        <input type="hidden" id="ap-id">
+        <div class="grade-campos">
+          <div class="campo">
+            <label for="ap-data">Data</label>
+            <input type="date" id="ap-data" required>
+          </div>
+          <div class="campo">
+            <label for="ap-maquina">Linha / célula</label>
+            <select id="ap-maquina" required></select>
+          </div>
+          <div class="campo">
+            <label for="ap-turno">Turno</label>
+            <select id="ap-turno" required></select>
+          </div>
+          <div class="campo">
+            <label for="ap-modelo">Modelo produzido</label>
+            <select id="ap-modelo"></select>
+          </div>
+          <div class="campo">
+            <label for="ap-lider">Líder / encarregado</label>
+            <input type="text" id="ap-lider" maxlength="80" placeholder="Nome">
+          </div>
+          <div class="campo">
+            <label for="ap-pecas">Peças produzidas</label>
+            <input type="number" id="ap-pecas" min="0" step="1" value="0" required>
+          </div>
+          <div class="campo">
+            <label for="ap-defeito">Peças com defeito</label>
+            <input type="number" id="ap-defeito" min="0" step="1" value="0">
+          </div>
+          <div class="campo">
+            <label for="ap-retrabalho">Peças retrabalhadas</label>
+            <input type="number" id="ap-retrabalho" min="0" step="1" value="0">
+          </div>
+        </div>
+
+        <div class="bloco-paradas">
+          <div class="bloco-paradas-cabecalho">
+            <h3>Paradas registradas</h3>
+            <span class="dica" id="resumo-paradas">0 min registrados</span>
+          </div>
+          <p class="dica">
+            Paradas <strong>planejadas</strong> (refeição, DDS, falta de programação) saem do tempo planejado e
+            <em>não</em> penalizam a disponibilidade. As demais sim.
+          </p>
+          <div id="lista-paradas" class="lista-paradas"></div>
+          <button type="button" class="btn btn-secundario" id="btn-add-parada">+ Adicionar parada</button>
+        </div>
+
+        <div class="campo campo-largo">
+          <label for="ap-observacao">Observação</label>
+          <textarea id="ap-observacao" rows="2" maxlength="500" placeholder="Ocorrências do turno"></textarea>
+        </div>
+
+        <div class="acoes-formulario">
+          <button type="submit" class="btn btn-primario">💾 Salvar apontamento</button>
+          <button type="button" class="btn btn-fantasma" id="btn-cancelar-apontamento">Cancelar</button>
+          <button type="button" class="btn btn-secundario" id="btn-simular">🔎 Simular OEE</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="cartao">
+      <div class="cartao-cabecalho">
+        <h2>Histórico</h2>
+        <span class="dica" id="contador-apontamentos"></span>
+      </div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-apontamentos">
+          <thead>
+            <tr>
+              <th>Data</th><th>Linha</th><th>Turno</th><th>Modelo</th>
+              <th class="num">Peças</th><th class="num">Defeito</th>
+              <th class="num">Disponib.</th><th class="num">Desemp.</th><th class="num">Qualid.</th>
+              <th class="num">OEE</th><th class="num">Peças/h</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ LINHAS ============================ -->
+  <section class="painel" id="view-linhas">
+    <div class="cartao">
+      <div class="cartao-cabecalho">
+        <h2>Cadastro de linha / célula</h2>
+      </div>
+      <form id="form-maquina" class="formulario" autocomplete="off">
+        <input type="hidden" id="mq-id">
+        <div class="grade-campos">
+          <div class="campo"><label for="mq-nome">Nome</label><input type="text" id="mq-nome" required placeholder="Linha 1 — Malha Leve"></div>
+          <div class="campo"><label for="mq-setor">Setor</label><input type="text" id="mq-setor" required list="lista-setores" placeholder="Costura"><datalist id="lista-setores"></datalist></div>
+          <div class="campo"><label for="mq-tipo">Tipo de máquina</label><input type="text" id="mq-tipo" placeholder="Reta + Overloque"></div>
+          <div class="campo"><label for="mq-operadores">Operadores na célula</label><input type="number" id="mq-operadores" min="1" step="1" value="1" required></div>
+          <div class="campo"><label for="mq-custo">Custo-hora da célula (R$)</label><input type="number" id="mq-custo" min="0" step="0.01" value="0"></div>
+          <div class="campo"><label for="mq-meta">Meta de OEE (%)</label><input type="number" id="mq-meta" min="1" max="100" step="1" value="85"></div>
+        </div>
+        <div class="campo campo-largo"><label for="mq-obs">Observação</label><input type="text" id="mq-obs" maxlength="200"></div>
+        <p class="dica">
+          O <strong>tempo ciclo ideal</strong> da célula é o SAM da peça dividido pelo número de operadores.
+          Uma linha de 12 operadores costurando peça de SAM 18 min deve entregar 1 peça a cada 1,5 min.
+        </p>
+        <div class="acoes-formulario">
+          <button type="submit" class="btn btn-primario">💾 Salvar linha</button>
+          <button type="button" class="btn btn-fantasma" id="btn-cancelar-maquina">Limpar</button>
+        </div>
+      </form>
+    </div>
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Linhas cadastradas</h2></div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-maquinas">
+          <thead><tr><th>Nome</th><th>Setor</th><th>Tipo</th><th class="num">Operadores</th><th class="num">Custo/h</th><th class="num">Meta OEE</th><th>Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== MODELOS ============================ -->
+  <section class="painel" id="view-modelos">
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Cadastro de modelo / peça</h2></div>
+      <form id="form-modelo" class="formulario" autocomplete="off">
+        <input type="hidden" id="md-id">
+        <div class="grade-campos">
+          <div class="campo"><label for="md-codigo">Código</label><input type="text" id="md-codigo" required placeholder="CAM-100"></div>
+          <div class="campo"><label for="md-nome">Descrição</label><input type="text" id="md-nome" required placeholder="Camiseta Básica Gola C"></div>
+          <div class="campo"><label for="md-categoria">Categoria</label><input type="text" id="md-categoria" placeholder="Camiseta"></div>
+          <div class="campo">
+            <label for="md-sam">SAM — tempo padrão (min/peça)</label>
+            <input type="number" id="md-sam" min="0.1" step="0.1" value="10" required>
+          </div>
+          <div class="campo"><label for="md-preco">Preço de venda (R$)</label><input type="number" id="md-preco" min="0" step="0.01" value="0"></div>
+        </div>
+        <p class="dica">
+          <strong>SAM (Standard Allowed Minutes)</strong> é a soma dos tempos padrão de todas as operações de
+          costura da peça. É a referência contra a qual o desempenho da linha é medido.
+        </p>
+        <div class="acoes-formulario">
+          <button type="submit" class="btn btn-primario">💾 Salvar modelo</button>
+          <button type="button" class="btn btn-fantasma" id="btn-cancelar-modelo">Limpar</button>
+        </div>
+      </form>
+    </div>
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Modelos cadastrados</h2></div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-modelos">
+          <thead><tr><th>Código</th><th>Descrição</th><th>Categoria</th><th class="num">SAM (min)</th><th class="num">Preço</th><th>Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ TURNOS ============================ -->
+  <section class="painel" id="view-turnos">
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Cadastro de turno</h2></div>
+      <form id="form-turno" class="formulario" autocomplete="off">
+        <input type="hidden" id="tn-id">
+        <div class="grade-campos">
+          <div class="campo"><label for="tn-nome">Nome</label><input type="text" id="tn-nome" required placeholder="1º Turno"></div>
+          <div class="campo"><label for="tn-inicio">Início</label><input type="time" id="tn-inicio" required value="07:00"></div>
+          <div class="campo"><label for="tn-fim">Fim</label><input type="time" id="tn-fim" required value="16:00"></div>
+          <div class="campo"><label for="tn-minutos">Duração (min)</label><input type="number" id="tn-minutos" min="1" step="1" placeholder="calculada"></div>
+          <div class="campo"><label for="tn-pausas">Pausas planejadas (min)</label><input type="number" id="tn-pausas" min="0" step="1" value="60"></div>
+        </div>
+        <p class="dica">
+          As pausas planejadas já definidas no turno (refeição e intervalos) são descontadas automaticamente
+          do tempo planejado. A duração é calculada a partir dos horários e aceita turno que cruza a meia-noite.
+        </p>
+        <div class="acoes-formulario">
+          <button type="submit" class="btn btn-primario">💾 Salvar turno</button>
+          <button type="button" class="btn btn-fantasma" id="btn-cancelar-turno">Limpar</button>
+        </div>
+      </form>
+    </div>
+    <div class="cartao">
+      <div class="cartao-cabecalho"><h2>Turnos cadastrados</h2></div>
+      <div class="tabela-rolagem">
+        <table class="tabela" id="tabela-turnos">
+          <thead><tr><th>Nome</th><th>Início</th><th>Fim</th><th class="num">Duração</th><th class="num">Pausas</th><th class="num">Tempo planejado</th><th>Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= AJUDA ============================ -->
+  <section class="painel" id="view-ajuda">
+    <div class="cartao">
+      <h2>Como o sistema mede a eficiência</h2>
+      <p>
+        O indicador central é o <strong>OEE</strong> (<em>Overall Equipment Effectiveness</em>), aplicado aqui à
+        célula de costura. Ele decompõe a eficiência em três fatores multiplicativos:
+      </p>
+      <div class="formula">OEE = Disponibilidade × Desempenho × Qualidade</div>
+
+      <div class="duas-colunas">
+        <div class="bloco-explicacao">
+          <h3>1. Disponibilidade</h3>
+          <div class="formula menor">Tempo de operação ÷ Tempo planejado</div>
+          <p>
+            <strong>Tempo planejado</strong> = duração do turno − pausas planejadas (refeição, intervalos, DDS).
+            <strong>Tempo de operação</strong> = tempo planejado − paradas não planejadas
+            (quebra, setup, falta de material, ausência de operador).
+          </p>
+          <p>Responde: <em>a linha ficou rodando o tempo que deveria?</em></p>
+        </div>
+        <div class="bloco-explicacao">
+          <h3>2. Desempenho</h3>
+          <div class="formula menor">Peças produzidas ÷ Peças teóricas</div>
+          <p>
+            <strong>Tempo ciclo ideal</strong> = SAM da peça ÷ número de operadores da célula.
+            <strong>Peças teóricas</strong> = tempo de operação ÷ tempo ciclo ideal.
+          </p>
+          <p>
+            Exemplo: peça com SAM 18 min em linha de 12 operadores → 1 peça a cada 1,5 min.
+            Em 360 min de operação a linha deveria entregar 240 peças.
+          </p>
+          <p>Responde: <em>a linha produziu no ritmo do padrão?</em></p>
+        </div>
+      </div>
+
+      <div class="bloco-explicacao">
+        <h3>3. Qualidade</h3>
+        <div class="formula menor">Peças boas ÷ Peças produzidas</div>
+        <p>Peças boas = peças produzidas − peças com defeito (refugo).</p>
+        <p>Responde: <em>o que foi produzido pode ser vendido?</em></p>
+      </div>
+
+      <div class="bloco-explicacao">
+        <h3>Exemplo completo</h3>
+        <p>Turno de 480 min com 60 min de refeição → <strong>420 min planejados</strong>.
+        A linha parou 60 min → <strong>360 min de operação</strong> (disponibilidade 85,7%).
+        Produziu 216 peças contra 240 teóricas (desempenho 90%) e refugou 6 (qualidade 97,2%).</p>
+        <div class="formula">OEE = 0,857 × 0,90 × 0,972 = <strong>75,0%</strong></div>
+        <p>
+          As perdas somam 105 min: 60 de indisponibilidade, 36 de ritmo abaixo do padrão e 9 de refugo.
+          A um custo-hora de R$ 240, isso representa <strong>R$ 420 perdidos no turno</strong>.
+        </p>
+      </div>
+
+      <div class="bloco-explicacao">
+        <h3>Consolidação de período</h3>
+        <p>
+          O OEE consolidado de várias linhas ou dias <strong>não é a média dos OEEs</strong>.
+          Cada fator é ponderado pelo próprio denominador: disponibilidade pelo tempo planejado total,
+          desempenho pelo tempo de operação total e qualidade pelo total de peças produzidas.
+          Isso evita que uma célula pequena distorça o resultado da fábrica.
+        </p>
+      </div>
+
+      <div class="bloco-explicacao">
+        <h3>Referência de metas (world class)</h3>
+        <table class="tabela tabela-compacta">
+          <thead><tr><th>Indicador</th><th class="num">Crítico</th><th class="num">Aceitável</th><th class="num">Excelência</th></tr></thead>
+          <tbody>
+            <tr><td>OEE</td><td class="num">&lt; 65%</td><td class="num">65 – 85%</td><td class="num">≥ 85%</td></tr>
+            <tr><td>Disponibilidade</td><td class="num">&lt; 80%</td><td class="num">80 – 90%</td><td class="num">≥ 90%</td></tr>
+            <tr><td>Desempenho</td><td class="num">&lt; 80%</td><td class="num">80 – 95%</td><td class="num">≥ 95%</td></tr>
+            <tr><td>Qualidade</td><td class="num">&lt; 95%</td><td class="num">95 – 99%</td><td class="num">≥ 99%</td></tr>
+          </tbody>
+        </table>
+        <p class="dica">
+          Em confecção, desempenho persistentemente acima de 100% quase sempre indica <strong>SAM defasado</strong>
+          — o sistema sinaliza esse caso em vez de inflar o OEE, que é limitado a 100% de desempenho.
+        </p>
+      </div>
+
+      <div class="bloco-explicacao">
+        <h3>Metas da fábrica</h3>
+        <form id="form-metas" class="formulario">
+          <div class="grade-campos">
+            <div class="campo"><label for="cfg-fabrica">Nome da fábrica</label><input type="text" id="cfg-fabrica"></div>
+            <div class="campo"><label for="cfg-oee">Meta de OEE (%)</label><input type="number" id="cfg-oee" min="1" max="100" step="1"></div>
+            <div class="campo"><label for="cfg-disp">Meta de disponibilidade (%)</label><input type="number" id="cfg-disp" min="1" max="100" step="1"></div>
+            <div class="campo"><label for="cfg-desemp">Meta de desempenho (%)</label><input type="number" id="cfg-desemp" min="1" max="100" step="1"></div>
+            <div class="campo"><label for="cfg-qual">Meta de qualidade (%)</label><input type="number" id="cfg-qual" min="1" max="100" step="1"></div>
+          </div>
+          <div class="acoes-formulario"><button type="submit" class="btn btn-primario">💾 Salvar metas</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+<div id="modal-simulacao" class="modal" hidden>
+  <div class="modal-conteudo">
+    <div class="modal-cabecalho"><h2>Simulação de OEE</h2><button type="button" class="btn btn-fantasma" id="fechar-simulacao">✕</button></div>
+    <div id="corpo-simulacao"></div>
+  </div>
+</div>
+
+<script src="/js/graficos.js"></script>
+<script src="/js/aplicacao.js"></script>
+</body>
+</html>

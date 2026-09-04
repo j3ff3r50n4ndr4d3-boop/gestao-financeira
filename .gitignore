@@ -1,0 +1,13 @@
+# Banco de dados local (regenerável com `npm run seed`)
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
