@@ -286,6 +286,34 @@ um servidor Node nem abre um banco SQLite. Como este sistema é uma aplicação 
 o Pages não consegue hospedá-lo. Para ter uma URL pública é preciso de um serviço que execute
 o processo Node.
 
+### Dá para ficar online usando só o GitHub?
+
+Não. Este é o ponto que mais gera confusão, então vale registrar os números (verificados em
+setembro de 2026):
+
+| Serviço do GitHub | Plano gratuito | Serve para hospedar este sistema? |
+|---|---|---|
+| **Repositório** | Ilimitado e permanente | ✅ Hospeda o **código**, para sempre e de graça |
+| **GitHub Pages** | Ilimitado | ❌ Só arquivos **estáticos**. Não executa Node nem abre SQLite |
+| **GitHub Codespaces** | 120 core-horas/mês (≈ 60 h reais numa máquina de 2 núcleos) + 15 GB | ⚠️ Roda o sistema de verdade, mas **para quando ocioso** e a cota acaba no meio do mês. Não fica permanentemente no ar |
+| **GitHub Actions** | 2.000 minutos/mês | ❌ É CI (rodar testes), não hospedagem |
+
+Ou seja: **publicar o código no GitHub é grátis e permanente; manter a aplicação no ar não é
+algo que o GitHub ofereça de graça para um app com backend.** As duas coisas são diferentes.
+
+Existem então dois caminhos honestos:
+
+1. **Trocar de plataforma para hospedar** (Render, Northflank, VPS…) e manter o sistema como
+   está — servidor Node + SQLite compartilhado. É o que os arquivos de deploy abaixo já deixam
+   pronto.
+2. **Manter só o GitHub e trocar a arquitetura**: gerar uma versão **estática** que roda
+   inteira no navegador, com os dados no `localStorage` em vez de um banco no servidor. Aí o
+   GitHub Pages serve e a URL fica no ar para sempre, de graça. O preço é real: os dados
+   passam a existir **só naquele navegador** — não há mais base compartilhada entre usuários, e
+   limpar os dados do site apaga tudo. Os motores de cálculo (`oee.js`, `tempos.js`,
+   `balanceamento.js`) já são funções puras e seriam reaproveitados; a camada de consultas
+   precisaria ser reescrita para o navegador.
+
 ### Arquivos de deploy incluídos
 
 | Arquivo | Para quê |
