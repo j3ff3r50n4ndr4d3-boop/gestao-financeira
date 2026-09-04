@@ -67,6 +67,12 @@ function gerar() {
   const resumo = semear(db, { dias: 45, limpar: true });
   const snapshot = backup.exportar(db);
 
+  // `geradoEm` é a hora da exportação. Fixo aqui porque a build precisa ser
+  // determinística: sem isto, rodar os testes (que regeneram docs/) suja um
+  // arquivo já commitado só pelo timestamp. O campo é só metadado — `importar`
+  // valida `versao` e `tabelas`, não a data.
+  snapshot.geradoEm = resumo.periodo.ate + 'T00:00:00.000Z';
+
   let html = fs.readFileSync(path.join(SAIDA, 'index.html'), 'utf8');
 
   // Remove as tags de script originais e insere a ordem da versão estática.
