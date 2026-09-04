@@ -100,12 +100,18 @@ function gerar() {
   fs.writeFileSync(path.join(SAIDA, '.nojekyll'), '');
 
   const tamanho = fs.statSync(path.join(SAIDA, 'index.html')).size;
-  return { resumo, snapshot, tamanhoKb: Math.round(tamanho / 1024) };
+
+  // O arquivo único é derivado de docs/, e o rmSync lá em cima o apagaria.
+  // Gerado aqui para que `npm run pages` produza as duas publicações de uma vez.
+  const unico = require('./gerar-html-unico').gerar();
+
+  return { resumo, snapshot, tamanhoKb: Math.round(tamanho / 1024), unicoKb: unico.kb };
 }
 
 if (require.main === module) {
   const r = gerar();
   console.log(`[estático] docs/ gerado — index.html com ${r.tamanhoKb} KB (cenário embutido)`);
+  console.log(`[estático] docs/eficiencia-producao.html — ${r.unicoKb} KB, arquivo único offline`);
   console.log(`[estático] cenário: ${r.resumo.apontamentos} apontamentos, ${r.resumo.paradas} paradas, `
     + `${r.snapshot.contagem.producao_operador} registros individuais (${r.resumo.periodo.de} a ${r.resumo.periodo.ate})`);
 }

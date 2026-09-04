@@ -342,9 +342,25 @@ roda inteira no navegador, sem servidor. É ela que o GitHub Pages publica, de g
 prazo.
 
 ```bash
-npm run pages      # regenera docs/
+npm run pages      # regenera docs/ (e o arquivo único junto)
 npm run pages:ver  # serve docs/ localmente, do jeito que o Pages serviria
 ```
+
+### Um arquivo .html só
+
+`docs/eficiencia-producao.html` é o sistema inteiro num arquivo: CSS, JavaScript e o cenário
+de exemplo embutidos, **sem nenhum pedido externo**. Abre com dois cliques, do disco, sem
+servidor e sem internet — dá para levar num pendrive ou mandar por mensagem.
+
+```bash
+node scripts/gerar-html-unico.js   # 882 KB
+```
+
+`test/pages.test.js` abre esse arquivo isolado, executa só o conteúdo inline, com `fetch`
+proibido, e confere que ele sobe, renderiza e grava no `localStorage`.
+
+Os dados continuam no navegador de quem abrir: dois arquivos abertos em máquinas diferentes
+não compartilham nada.
 
 A build copia o front-end e os **mesmos** motores de cálculo do servidor (`oee.js`, `tempos.js`
 e `balanceamento.js`, agora com exportação dupla) e embute o cenário de exemplo direto no HTML
@@ -410,7 +426,7 @@ em hospedagem gratuita: baixar o JSON antes de um reinício e restaurá-lo depoi
 npm test
 ```
 
-136 testes cobrem:
+138 testes cobrem:
 
 - **`oee.test.js`** — tempo ciclo ideal, o cenário de referência 85,71% × 90% × 97,22% = 75%,
   separação entre paradas planejadas e não planejadas, a identidade
@@ -438,7 +454,8 @@ npm test
   navegador de divergir do servidor em silêncio.
 - **`pages.test.js`** — carrega a pasta `docs/` gerada na ordem de scripts do próprio
   `index.html`, com `fetch` proibido, e verifica que a página sobe sozinha, que as abas novas
-  funcionam sem servidor e que o que é lançado volta na visita seguinte.
+  funcionam sem servidor e que o que é lançado volta na visita seguinte. Também abre
+  `eficiencia-producao.html` isolado e prova que um arquivo só basta.
 - **`backup.test.js`** — exportação das 14 tabelas com conferência de contagem, restauração em
   banco vazio, substituição sem acumular, compatibilidade com backup antigo sem colunas novas,
   **rollback que preserva o banco quando uma linha falha**, rejeição de payload inválido e o

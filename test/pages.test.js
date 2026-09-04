@@ -17,11 +17,12 @@ const vm = require('node:vm');
 
 const { criarDom } = require('./ajuda/dom');
 const { gerar, SAIDA } = require('../scripts/gerar-estatico');
+const htmlUnico = require('../scripts/gerar-html-unico');
 
 let html = '';
 
 test.before(() => {
-  gerar();
+  gerar();  // gera docs/ e, ao final, o arquivo único derivado dele
   html = fs.readFileSync(path.join(SAIDA, 'index.html'), 'utf8');
 });
 
@@ -216,3 +217,75 @@ function subirPaginaComMesmoArmazenamento(anterior) {
   }
   return { contexto, registry };
 }
+
+/* ------------------------------------------------- arquivo .html único ----- */
+
+const ARQ_UNICO = path.join(SAIDA, 'eficiencia-producao.html');
+
+test('o arquivo único não pede nada de fora e guarda a ordem dos módulos', () => {
+  const um = fs.readFileSync(ARQ_UNICO, 'utf8');
+  assert.doesNotMatch(um, /<script src="/, 'nenhum script externo');
+  assert.doesNotMatch(um, /<link rel="stylesheet"/, 'nenhum CSS externo');
+  assert.doesNotMatch(um, /(href|src)="(?!data:|#|mailto)[^"]*"/, 'nenhum pedido externo');
+  assert.match(um, /<style>[\s\S]{1000,}/, 'CSS embutido');
+
+  // Só a tag de abertura: entre ela e o </script> vem o código embutido.
+  const ordem = [...um.matchAll(/<script data-origem="([^"]+)">/g)].map((m) => m[1]);
+  assert.deepEqual(ordem, [
+    'js/motores/oee.js', 'js/motores/tempos.js', 'js/motores/balanceamento.js',
+    'js/banco-local.js', 'js/api-local.js', 'js/graficos.js', 'js/aplicacao.js',
+  ], 'ordem preservada no arquivo único');
+});
+
+test('o arquivo único abre sozinho e renderiza — sem servidor, sem fetch, sem outros arquivos', async () => {
+  // Executa SÓ o conteúdo inline do arquivo. Nenhum arquivo do projeto é lido
+  // aqui além do próprio .html: é a prova de que ele basta.
+  const um = fs.readFileSync(ARQ_UNICO, 'utf8');
+  const { document, registry } = criarDom();
+  const m = new Map();
+  const contexto = {
+    document, console,
+    fetch: () => { throw new Error('o arquivo único não pode usar fetch'); },
+    confirm: () => true,
+    URL, URLSearchParams, structuredClone, Blob: class {},
+    localStorage: {
+      getItem: (k) => (m.has(k) ? m.get(k) : null),
+      setItem: (k, v) => m.set(k, String(v)),
+      removeItem: (k) => m.delete(k),
+    },
+    setTimeout: (fn) => setTimeout(fn, 0),
+    clearTimeout: () => {},
+  };
+  contexto.window = contexto;
+  contexto.globalThis = contexto;
+  contexto.scrollTo = () => {};
+  contexto.location = { href: 'file:///qualquer/pasta/eficiencia-producao.html' };
+  vm.createContext(contexto);
+
+  // Todos os <script> do arquivo, na ordem do documento — inclusive o inline
+  // com o cenário, que não tem data-origem.
+  const blocos = [...um.matchAll(/<script(?: data-origem="[^"]*")?>([\s\S]*?)<\/script>/g)];
+  assert.ok(blocos.length >= 8, `${blocos.length} blocos de script`);
+  for (const [i, b] of blocos.entries()) {
+    vm.runInContext(b[1], contexto, { filename: `bloco-${i}` });
+  }
+
+  assert.ok(contexto.DADOS_INICIAIS, 'cenário embutido no próprio arquivo');
+  assert.ok(await esperar(() => (registry.get('#nome-fabrica')?.textContent || '').length > 0),
+    'a aplicação iniciou a partir de um único arquivo');
+  assert.equal(registry.get('#nome-fabrica').textContent, 'Confecção Aurora LTDA');
+
+  const kpis = registry.get('#kpis').innerHTML;
+  assert.match(kpis, /Peças produzidas/, 'KPIs renderizados');
+  assert.doesNotMatch(kpis, /NaN|undefined/, 'KPIs sem NaN/undefined');
+
+  // Escrever e ler de volta, para provar que o localStorage funciona no arquivo.
+  await contexto.api('/api/apontamentos', {
+    method: 'POST',
+    body: {
+      data: '2026-09-04', maquina_id: 2, turno_id: 1, modelo_id: 1,
+      pecas_produzidas: 111, pecas_defeito: 1, pecas_retrabalho: 0, paradas: [],
+    },
+  });
+  assert.ok(m.get('eficiencia-producao-v1'), 'lançamento gravado no localStorage');
+});
