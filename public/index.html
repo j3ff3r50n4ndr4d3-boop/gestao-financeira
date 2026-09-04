@@ -703,6 +703,22 @@
           <div class="acoes-formulario"><button type="submit" class="btn btn-primario">💾 Salvar metas</button></div>
         </form>
       </div>
+
+      <div class="bloco-explicacao">
+        <h3>Cópia de segurança</h3>
+        <p class="dica">
+          Exporta o banco inteiro em JSON — modelos, sequências, cronometragens, apontamentos,
+          paradas e produção individual. Em hospedagem gratuita o disco é temporário e é
+          recriado a cada reinício, então este arquivo é o que preserva os dados lançados:
+          guarde-o e use a restauração para recolocá-los no lugar.
+        </p>
+        <div class="acoes-formulario">
+          <a class="btn btn-primario" href="/api/backup" download>⬇️ Baixar backup (JSON)</a>
+          <label class="btn btn-secundario" for="arquivo-restauracao">⬆️ Restaurar a partir de arquivo…</label>
+          <input type="file" id="arquivo-restauracao" accept="application/json,.json" hidden>
+        </div>
+        <p class="dica" id="estado-backup"></p>
+      </div>
     </div>
   </section>
 

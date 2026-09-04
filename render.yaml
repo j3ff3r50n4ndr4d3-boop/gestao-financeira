@@ -1,0 +1,18 @@
+# Blueprint do Render: https://render.com → New → Blueprint → escolha este repositório.
+# Plano gratuito (sem cartão de crédito). O serviço adormece após 15 min sem
+# requisições e leva ~30-60 s para acordar na próxima visita.
+services:
+  - type: web
+    name: eficiencia-produtiva
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    region: ohio
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: EFICIENCIA_DB
+        value: /app/data/eficiencia.db

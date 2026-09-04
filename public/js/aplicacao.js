@@ -958,7 +958,40 @@ function ligarEventos() {
   $('#acomp-equipe').addEventListener('change', () => carregarAcompanhamento().catch((e) => avisar(e.message, 'erro')));
   $('#acomp-operador').addEventListener('change', () => carregarAcompanhamento().catch((e) => avisar(e.message, 'erro')));
 
+  $('#arquivo-restauracao').addEventListener('change', (e) => {
+    const arquivo = e.target.files && e.target.files[0];
+    if (arquivo) restaurarBackup(arquivo);
+    e.target.value = '';
+  });
+
   $('#form-metas').addEventListener('submit', salvarMetas);
+}
+
+/* =============================================== cópia de segurança ======= */
+
+async function restaurarBackup(arquivo) {
+  const alvo = $('#estado-backup');
+  alvo.textContent = `Lendo ${arquivo.name}…`;
+  try {
+    const texto = await arquivo.text();
+    const dados = JSON.parse(texto);
+    if (!dados.tabelas) throw new Error('o arquivo não parece ser um backup deste sistema');
+
+    const pecas = dados.contagem ? dados.contagem.apontamentos : dados.tabelas.apontamentos?.length;
+    if (!confirm(`Substituir TODOS os dados atuais pelo backup de ${String(dados.geradoEm || '').slice(0, 10)}\n(${pecas ?? '?'} apontamentos)? Esta ação não pode ser desfeita.`)) {
+      alvo.textContent = 'Restauração cancelada.';
+      return;
+    }
+
+    alvo.textContent = 'Restaurando…';
+    const r = await api('/api/restore', { method: 'POST', body: dados });
+    alvo.textContent = `Backup restaurado: ${r.tabelas} tabelas.`;
+    avisar('Backup restaurado. Recarregando…', 'sucesso');
+    setTimeout(() => window.location.reload(), 1200);
+  } catch (e) {
+    alvo.textContent = '';
+    avisar(`Falha na restauração: ${e.message}`, 'erro');
+  }
 }
 
 /* ============================================ selects dos módulos novos === */

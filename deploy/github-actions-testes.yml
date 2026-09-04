@@ -1,0 +1,35 @@
+# CI opcional — o GitHub App usado para publicar não tem a permissão `workflows`,
+# então este arquivo fica fora de .github/workflows/ de propósito.
+#
+# Para ativar: copie para .github/workflows/testes.yml e faça o commit pela
+# interface do GitHub ou com a sua própria credencial.
+#   mkdir -p .github/workflows && cp deploy/github-actions-testes.yml .github/workflows/testes.yml
+
+name: Testes
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # >= 22.5.0 é obrigatório: o banco usa o módulo nativo node:sqlite
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Versão do Node
+        run: node --version
+
+      - name: Testes
+        run: npm test
+
+      - name: Verificação de sintaxe
+        run: |
+          for f in $(git ls-files '*.js'); do node --check "$f"; done
+          echo "sintaxe ok em $(git ls-files '*.js' | wc -l) arquivos"

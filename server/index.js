@@ -18,6 +18,7 @@ const sequencia = require('./lib/sequencia');
 const producao = require('./lib/producao');
 const tempos = require('./lib/tempos');
 const balanceamento = require('./lib/balanceamento');
+const backup = require('./lib/backup');
 const { MOTIVOS_PARADA, SEIS_GRANDES_PERDAS, calcularOEE } = require('./lib/oee');
 const { semearSeVazio } = require('./seed');
 
@@ -820,6 +821,30 @@ rota('GET', '/api/export/apontamentos.csv', async (req, db, _p, _c, query, res) 
   res.end(csv);
   return null;
 });
+
+// ---- cópia de segurança (o disco dos planos gratuitos é efêmero) ----
+rota('GET', '/api/backup', async (_req, db, _p, _c, _q, res) => {
+  const dados = backup.exportar(db);
+  const corpo = JSON.stringify(dados, null, 2);
+  const arquivo = `eficiencia-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  res.writeHead(200, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Disposition': `attachment; filename="${arquivo}"`,
+  });
+  res.end(corpo);
+  return null;
+});
+
+rota('POST', '/api/restore', async (_req, db, _p, corpo) => {
+  if (!corpo || typeof corpo !== 'object') return [400, { erro: 'Envie o JSON de um backup' }];
+  try {
+    const r = backup.importar(db, corpo);
+    return [200, { restaurado: true, tabelas: r.tabelas.length, inserido: r.inserido }];
+  } catch (e) {
+    return [400, { erro: e.message }];
+  }
+});
+
 
 // --------------------------------------------------------------- estáticos ----
 

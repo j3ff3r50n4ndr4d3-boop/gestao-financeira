@@ -200,6 +200,7 @@ server/
     sequencia.js      leitura e recálculo da sequência operacional e das cronometragens
     balanceamento.js  distribuição de operações em postos (Largest Candidate Rule)
     producao.js       acompanhamento diário, mensal, individual e por equipe
+    backup.js         exportação e restauração do banco inteiro
     consultas.js      consultas que ligam o banco ao motor
 public/
   index.html         interface
@@ -211,6 +212,7 @@ test/
   tempos.test.js      cronometragem, sequência e balanceamento (18 testes)
   api.test.js         API de ponta a ponta contra SQLite em memória (20 testes)
   api-producao.test.js  API dos módulos novos (17 testes)
+  backup.test.js      cópia de segurança e restauração (9 testes)
   frontend.test.js    scripts de navegador executados com dados reais da API (17 testes)
 ```
 
@@ -261,6 +263,8 @@ gráficos são SVG gerado à mão — a aplicação roda e abre offline, sem CDN
 | GET | `/api/producao` | Produção individual em nível de registro |
 | GET | `/api/acompanhamento` | Consolidação diária, mensal, por operador, equipe, linha e modelo |
 | GET/PUT | `/api/apontamentos/:id/producao` | Produção individual do apontamento (substitui o conjunto) |
+| GET | `/api/backup` | Baixa o banco inteiro em JSON |
+| POST | `/api/restore` | Restaura o banco a partir de um backup (transação única) |
 
 Filtros aceitos por `/api/apontamentos` e `/api/dashboard`: `de`, `ate`, `maquinaId`, `setor`
 e, nos apontamentos, `limite`. `/api/producao` e `/api/acompanhamento` aceitam ainda
@@ -272,13 +276,76 @@ vez de apagar histórico. Alterações aditivas de esquema são aplicadas por mi
 
 ---
 
+## Publicar online
+
+### O que o GitHub faz e o que ele não faz
+
+O código já está hospedado no GitHub de graça e de forma permanente — repositório público,
+sem custo e sem prazo. Mas o **GitHub Pages serve apenas arquivos estáticos**: ele não executa
+um servidor Node nem abre um banco SQLite. Como este sistema é uma aplicação com backend,
+o Pages não consegue hospedá-lo. Para ter uma URL pública é preciso de um serviço que execute
+o processo Node.
+
+### Arquivos de deploy incluídos
+
+| Arquivo | Para quê |
+|---|---|
+| `Dockerfile` | Imagem portátil — serve para Render, Northflank, Fly.io, Koyeb, Hugging Face Spaces ou qualquer VPS |
+| `render.yaml` | Blueprint de um clique no Render (plano gratuito) |
+| `Procfile` | Plataformas no estilo Heroku |
+| `.dockerignore` | Deixa o banco local e o `.git` fora da imagem |
+| `deploy/github-actions-testes.yml` | CI que roda os 99 testes em todo push — grátis e ilimitado em repositório público. Copie para `.github/workflows/testes.yml` para ativar (o GitHub App que publica aqui não tem a permissão `workflows`, por isso o arquivo fica fora desse caminho) |
+
+A aplicação já está pronta para qualquer plataforma: lê `PORT` e `HOST` do ambiente, cria o
+diretório de dados sozinho, **semeia o banco automaticamente no primeiro boot** e expõe
+`/api/health` como sonda de saúde.
+
+### Opção gratuita sem cartão de crédito: Render
+
+1. Crie uma conta em <https://render.com> (pode entrar com a conta do GitHub).
+2. **New → Blueprint** → selecione este repositório. O `render.yaml` configura tudo.
+3. Aguarde o build. A URL final fica em `https://eficiencia-produtiva.onrender.com`.
+
+Ou sem o blueprint: **New → Web Service** → selecione o repositório → *Runtime* **Docker** →
+*Instance Type* **Free** → *Health Check Path* `/api/health`.
+
+**Limites reais do plano gratuito** (verificados em setembro de 2026):
+
+- o serviço **adormece após 15 minutos** sem requisições e leva ~30–60 s para acordar na
+  próxima visita — é o comportamento esperado, não um defeito;
+- 750 horas de instância por mês (suficiente para um serviço só);
+- **o disco é efêmero**: a cada reinício o SQLite é recriado e a aplicação resemeia os dados de
+  exemplo. Dados lançados à mão **não sobrevivem** sozinhos — veja a seção seguinte.
+
+Outras opções: **Northflank** mantém 2 serviços gratuitos sempre acordados, mas pede cartão
+para verificação; **Fly.io** e **Railway** não têm mais plano gratuito permanente em 2026
+(apenas créditos de teste).
+
+### Preservando os dados em disco efêmero
+
+Por isso existem os endpoints de cópia de segurança:
+
+| Método | Rota | O que faz |
+|---|---|---|
+| GET | `/api/backup` | Baixa o banco inteiro em JSON (todas as 14 tabelas) |
+| POST | `/api/restore` | Substitui o conteúdo atual pelo JSON enviado |
+
+A restauração roda em **transação única**: se qualquer linha falhar, tudo é desfeito e o banco
+continua exatamente como estava. Backup antigo, sem colunas adicionadas depois, continua
+restaurável — a importação usa a interseção entre as colunas do arquivo e as do esquema atual.
+
+Na interface, o botão fica na aba **Como calcular → Cópia de segurança**. O fluxo recomendado
+em hospedagem gratuita: baixar o JSON antes de um reinício e restaurá-lo depois.
+
+---
+
 ## Validação
 
 ```bash
 npm test
 ```
 
-90 testes cobrem:
+99 testes cobrem:
 
 - **`oee.test.js`** — tempo ciclo ideal, o cenário de referência 85,71% × 90% × 97,22% = 75%,
   separação entre paradas planejadas e não planejadas, a identidade
@@ -300,6 +367,10 @@ npm test
   o CRUD de equipes, operadores, operações e cronometragens com seus bloqueios 409, o recálculo
   de SAM, a simulação e a gravação de balanceamentos, e o fechamento cruzado das quatro visões
   do acompanhamento sobre o mesmo total de peças.
+- **`backup.test.js`** — exportação das 14 tabelas com conferência de contagem, restauração em
+  banco vazio, substituição sem acumular, compatibilidade com backup antigo sem colunas novas,
+  **rollback que preserva o banco quando uma linha falha**, rejeição de payload inválido e o
+  ciclo completo pelas rotas HTTP.
 - **`frontend.test.js`** — executa `graficos.js` e `aplicacao.js` num DOM mínimo alimentado com
   respostas reais da API, verificando o SVG gerado (sem `NaN`), os quatro medidores, KPIs,
   ranking, histórico, montagem do formulário de paradas, o aviso de erro quando a API falha e,
