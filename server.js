@@ -13,7 +13,9 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+  frameguard: false
 }));
 app.use(cors());
 app.use(compression());
