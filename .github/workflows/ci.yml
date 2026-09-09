@@ -1,0 +1,51 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test --if-present
+      
+      - name: Check build
+        run: npm run build --if-present
+      
+      - name: Security audit
+        run: npm audit --audit-level=moderate || true
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy notification
+        run: |
+          echo "✅ Tests passed!"
+          echo "🚀 Ready to deploy to production"
+          echo "📋 Choose your deployment platform:"
+          echo "   - Railway: Easy, supports SQLite"
+          echo "   - Render: Free tier available"
+          echo "   - Vercel: Fast, global CDN"
