@@ -1,0 +1,26 @@
+{
+  "name": "gestao-financeira-erp",
+  "version": "2.0.0",
+  "description": "Sistema ERP Completo - Gestão Financeira com Dashboard, Módulos de Vendas, Compras, Estoque, Financeiro e Painel de Assinaturas",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["erp", "gestao-financeira", "dashboard", "saaS", "assinatura"],
+  "author": "Gestão Financeira ERP",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "sql.js": "^1.10.2",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "express-rate-limit": "^7.1.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
