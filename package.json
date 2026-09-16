@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "course:doc": "node scripts/generate-curso-md.js",
+    "test": "node --test test/*.test.js"
   },
   "keywords": ["erp", "gestao-financeira", "dashboard", "saaS", "assinatura"],
   "author": "Gestão Financeira ERP",

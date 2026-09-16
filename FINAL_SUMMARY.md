@@ -151,6 +151,38 @@
 
 ---
 
+## 🎓 Academia ERP - Curso Integrado (novo)
+
+Curso **Gestão Financeira na Prática com ERP** dentro do próprio sistema (módulo **Curso**, na seção Aprendizado da barra lateral).
+
+### Estrutura
+- **23 módulos** e **58 aulas** organizados em 4 blocos
+- **174 questões de quiz** (3 por aula), corrigidas no servidor
+- **10,3 horas** de conteúdo + exercícios práticos = **18 horas** de carga horária
+- Fonte única de verdade em `src/course/modules/` (5 arquivos)
+
+### Blocos da trilha
+| Bloco | Módulos | Temas |
+| --- | --- | --- |
+| Fundamentos | 0 a 4 | Boas-vindas, caixa x competência, ciclo do dinheiro, KPIs, clientes e fornecedores |
+| Operação | 5 a 8 | Custo e precificação (markup, margem, hora produtiva), estoque (SKU, mínimo, giro, ABC), compras e vendas |
+| Financeiro e Análise | 9 a 16 | Contas a receber (aging e régua de cobrança), contas a pagar (ciclo financeiro), despesas e rateio, fluxo de caixa (projeção 13 semanas), DRE (análise vertical e horizontal), ponto de equilíbrio, indicadores e rotina do gestor |
+| Negócio e Tecnologia | 17 a 22 | TAM/SAM/SOM, MRR/ARR/churn/CAC/LTV, projeção de 12 meses, planos e MRR, segurança e LGPD, backup, deploy, API e integrações, projeto final e certificação |
+
+### Funcionalidades
+- Progresso salvo por usuário (tabela `course_progress`)
+- Gabarito nunca enviado ao navegador: correção e explicações ficam no servidor
+- Melhor nota registrada por aula (tentativas posteriores não rebaixam a nota)
+- Certificado **Especialista em Gestão Financeira com ERP** com código de verificação e impressão em PDF
+- Documento impresso gerado por `npm run course:doc` -> `CURSO.md`
+
+### Testes
+```bash
+npm test   # 14 testes: currículo, correção de quizzes e API de ponta a ponta
+```
+
+---
+
 ## 📚 Documentação Completa
 
 ### 📖 README.md
@@ -170,6 +202,10 @@
 - Roadmap de desenvolvimento
 - Métricas de sucesso (KPIs)
 - Considerações legais (LGPD)
+
+### 🎓 CURSO.md (Curso completo em texto)
+- Ementa, aulas, fórmulas, tabelas, exercícios, quizzes e gabarito
+- Gerado automaticamente a partir do currículo (`npm run course:doc`)
 
 ### 🚀 DEPLOYMENT.md (Guia de Deploy)
 - 6 opções de deploy (Vercel, Railway, Heroku, Render, DigitalOcean, VPS)
@@ -243,12 +279,13 @@
 - ✅ Documentação completa
 
 ### 📊 Estatísticas
-- **22 arquivos** criados
-- **4.692 linhas** de código
-- **50+ endpoints** de API
-- **12 tabelas** no banco de dados
-- **11 módulos** funcionais
+- **41 arquivos** no projeto
+- **8.619 linhas** de código (JS, HTML e CSS)
+- **55+ endpoints** de API (5 novos do curso)
+- **13 tabelas** no banco de dados (`course_progress` incluída)
+- **12 módulos** funcionais (Curso incluído)
 - **6 meses** de dados demo
+- **23 módulos / 58 aulas / 174 questões** no curso
 
 ---
 
