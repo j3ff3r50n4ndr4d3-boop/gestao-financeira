@@ -43,6 +43,7 @@ const expensesRoutes = require('./src/routes/expenses');
 const suppliersRoutes = require('./src/routes/suppliers');
 const financialRoutes = require('./src/routes/financial');
 const subscriptionsRoutes = require('./src/routes/subscriptions');
+const courseRoutes = require('./src/routes/course');
 
 // Public routes
 app.use('/api/auth', authRoutes);
@@ -58,6 +59,7 @@ app.use('/api/expenses', authenticateToken, expensesRoutes);
 app.use('/api/suppliers', authenticateToken, suppliersRoutes);
 app.use('/api/financial', authenticateToken, financialRoutes);
 app.use('/api/subscriptions', authenticateToken, subscriptionsRoutes);
+app.use('/api/course', authenticateToken, courseRoutes);
 
 // Serve the SPA for all non-API routes
 app.get('*', (req, res) => {

@@ -87,7 +87,8 @@ function navigateTo(page) {
     payable: loadPayable,
     cashflow: loadCashFlow,
     dre: loadDRE,
-    subscriptions: loadSubscriptions
+    subscriptions: loadSubscriptions,
+    course: loadCourse
   };
   
   if (pages[page]) pages[page]();

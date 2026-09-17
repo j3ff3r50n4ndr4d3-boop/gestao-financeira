@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-const DB_PATH = path.join(__dirname, 'data', 'erp.db');
+// Permite sobrescrever o caminho do banco (usado nos testes automatizados)
+const DB_PATH = process.env.ERP_DB_PATH || path.join(__dirname, 'data', 'erp.db');
 
 let db = null;
 
@@ -233,6 +234,20 @@ async function initDatabase() {
       auto_renew INTEGER DEFAULT 1,
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+  
+  db.run(`
+    CREATE TABLE IF NOT EXISTS course_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      lesson_id TEXT NOT NULL,
+      completed INTEGER DEFAULT 0,
+      quiz_score REAL DEFAULT 0,
+      quiz_attempts INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (user_id, lesson_id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
