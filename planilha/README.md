@@ -77,6 +77,6 @@ Python** os números-chave — saldos bancários, fluxo de caixa, DRE, lucro, ma
 dashboard, alertas, orçamento x realizado, cronogramas SAC/PRICE, ponto de equilíbrio, projeção de
 caixa e simulador de cenários — comparando com o resultado da planilha.
 
-Resultado da última execução: **262 verificações OK, 0 falhas, 0 células com erro de fórmula**.
+Resultado da última execução: **263 verificações OK, 0 falhas e 0 células com erro de fórmula**.
 
 Opcional para a suíte completa: `pip install --break-system-packages formulas==1.3.4`.

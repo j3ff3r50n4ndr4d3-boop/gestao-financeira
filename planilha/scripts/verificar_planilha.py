@@ -309,6 +309,21 @@ def etapa_estrutura(wb):
     checar("abas com painéis congelados (>= 8)", freezadas >= 8, True)
     print(f"  validações={n_dv} | formatação condicional={n_cf} | gráficos={n_ch} | "
           f"abas protegidas={n_prot} | congeladas={freezadas}")
+    # proteção: células de entrada precisam estar editáveis e as de fórmula travadas
+    amostra = [("CONFIGURAÇÕES", "B18", False), ("CONFIGURAÇÕES", "B19", False),
+               ("LANÇAMENTOS", "B6", False), ("LANÇAMENTOS", "E6", False),
+               ("LANÇAMENTOS", "AF6", True), ("LANÇAMENTOS", "AA6", True),
+               ("CONTAS BANCÁRIAS", "G6", False), ("CONTAS BANCÁRIAS", "H6", True),
+               ("DASHBOARD", "B7", False), ("DASHBOARD", "B131", True),
+               ("CADASTRO DE CLIENTES", "B6", False), ("CONFIGURAÇÕES", "B6", False)]
+    erradas = []
+    for aba, cel, travada in amostra:
+        c = wb[aba][cel]
+        if bool(c.protection.locked) != travada:
+            erradas.append((aba, cel, "deveria estar travada" if travada else "deveria ser editável"))
+    checar("células de entrada editáveis e de fórmula protegidas", len(erradas), 0)
+    for e in erradas[:5]:
+        print("    proteção incorreta:", e)
     ruins = []
     for ws in wb.worksheets:
         for linha in ws.iter_rows():
