@@ -87,7 +87,9 @@ function navigateTo(page) {
     payable: loadPayable,
     cashflow: loadCashFlow,
     dre: loadDRE,
-    subscriptions: loadSubscriptions
+    subscriptions: loadSubscriptions,
+    course: loadCourse,
+    agent: loadAgent
   };
   
   if (pages[page]) pages[page]();
@@ -123,7 +125,9 @@ async function loadDashboard() {
         <h1 class="page-title">Dashboard</h1>
         <p class="page-subtitle">Indicadores financeiros em tempo real</p>
       </div>
+      <button class="btn btn-primary" onclick="navigateTo('agent')">🤖 Agente IA</button>
     </div>
+    <div id="agentStrip"></div>
     <div id="kpiCards" class="kpi-grid"></div>
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px">
       <div class="card">
@@ -162,11 +166,54 @@ async function loadDashboard() {
     ]);
 
     renderKPIs(kpis);
-    renderCharts(revenueChart, expenseChart, categories);
     renderRecentSales(recentSales);
     renderAlerts(kpis, overdue);
+    renderAgentStrip();
+    // gráficos dependem do Chart.js (CDN): se ele não carregar, o restante do
+    // dashboard continua funcionando
+    try {
+      renderCharts(revenueChart, expenseChart, categories);
+    } catch (chartErr) {
+      console.warn('Gráficos indisponíveis:', chartErr.message);
+    }
   } catch (err) {
     container.innerHTML += `<div class="card"><p>Erro ao carregar dados: ${err.message}</p></div>`;
+  }
+}
+
+// ====== FAIXA DO AGENTE IA NO DASHBOARD ======
+// Resumo do diagnóstico das 6 áreas com atalho para o agente.
+// Falha silenciosa: nunca deve quebrar o dashboard.
+async function renderAgentStrip() {
+  const holder = document.getElementById('agentStrip');
+  if (!holder) return;
+  try {
+    const d = await api('/api/agent/diagnostic');
+    const score = d.company.score === null ? '—' : Number(d.company.score).toFixed(1).replace('.', ',');
+    const color = { Excelente: '#10b981', Bom: '#22c55e', 'Atenção': '#f59e0b', 'Crítico': '#ef4444' }[d.company.level.label] || '#6366f1';
+    const topAlerts = d.alerts.slice(0, 3);
+    holder.innerHTML = `
+      <div class="agent-block" style="display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;margin-bottom:20px">
+        <div style="text-align:center">
+          <div style="font-size:34px;font-weight:700;color:${color};line-height:1">${score}</div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--gray)">saúde do negócio</div>
+          <div class="badge" style="margin-top:4px;background:${color}22;color:${color}">${d.company.level.label}</div>
+        </div>
+        <div>
+          <strong style="font-size:14px">🤖 Leitura do Agente IA</strong>
+          <p style="font-size:13.5px;color:#374151;margin:4px 0 8px">${String(d.company.summary).replace(/</g, '&lt;')}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${topAlerts.map((a) => `<span class="agent-pill ${a.severity}">${a.severity === 'critica' ? '🔴' : a.severity === 'alta' ? '🟠' : a.severity === 'media' ? '🟡' : '🔵'} ${String(a.title).replace(/</g, '&lt;')}</span>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-primary" onclick="navigateTo('agent')">Ver diagnóstico</button>
+          <button class="btn btn-secondary" onclick="navigateTo('agent');setTimeout(()=>agentAsk('O que devo fazer primeiro nesta semana?'),400)">O que fazer agora?</button>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    holder.innerHTML = '';
   }
 }
 

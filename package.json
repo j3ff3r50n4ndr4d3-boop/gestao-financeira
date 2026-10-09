@@ -1,13 +1,27 @@
 {
   "name": "gestao-financeira-erp",
-  "version": "2.0.0",
-  "description": "Sistema ERP Completo - Gestão Financeira com Dashboard, Módulos de Vendas, Compras, Estoque, Financeiro e Painel de Assinaturas",
+  "version": "2.1.0",
+  "description": "Sistema ERP Completo - Gestão Financeira com Dashboard, Vendas, Compras, Estoque, Financeiro, Assinaturas, Academia ERP e Agente IA de gestão em 6 áreas",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "course:doc": "node scripts/generate-curso-md.js",
+    "test": "node --test test/*.test.js",
+    "seed": "node seed.js",
+    "agent:demo": "node scripts/agent-demo.js"
   },
-  "keywords": ["erp", "gestao-financeira", "dashboard", "saaS", "assinatura"],
+  "keywords": [
+    "erp",
+    "gestao-financeira",
+    "dashboard",
+    "saas",
+    "assinatura",
+    "agente-ia",
+    "ai-agent",
+    "gestao-empresarial",
+    "inteligencia-de-negocios"
+  ],
   "author": "Gestão Financeira ERP",
   "license": "MIT",
   "dependencies": {
