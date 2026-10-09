@@ -44,6 +44,7 @@ const suppliersRoutes = require('./src/routes/suppliers');
 const financialRoutes = require('./src/routes/financial');
 const subscriptionsRoutes = require('./src/routes/subscriptions');
 const courseRoutes = require('./src/routes/course');
+const agentRoutes = require('./src/routes/agent');
 
 // Public routes
 app.use('/api/auth', authRoutes);
@@ -60,6 +61,7 @@ app.use('/api/suppliers', authenticateToken, suppliersRoutes);
 app.use('/api/financial', authenticateToken, financialRoutes);
 app.use('/api/subscriptions', authenticateToken, subscriptionsRoutes);
 app.use('/api/course', authenticateToken, courseRoutes);
+app.use('/api/agent', authenticateToken, agentRoutes);
 
 // Serve the SPA for all non-API routes
 app.get('*', (req, res) => {
@@ -81,7 +83,8 @@ async function start() {
       console.log(`📡 Server running on http://0.0.0.0:${PORT}`);
       console.log(`👤 Admin: admin@erp.com / admin123`);
       console.log(`📊 Dashboard com KPIs financeiros`);
-      console.log(`💼 Módulos: Vendas, Compras, Estoque, Financeiro\n`);
+      console.log(`💼 Módulos: Vendas, Compras, Estoque, Financeiro`);
+      console.log(`🤖 Agente IA: 6 áreas de gestão em /api/agent\n`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

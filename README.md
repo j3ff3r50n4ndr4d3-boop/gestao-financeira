@@ -1,6 +1,6 @@
 # 📊 ERP Gestão Financeira - Sistema Completo
 
-Sistema ERP completo e moderno com dashboard de indicadores financeiros, pronto para uso empresarial.
+Sistema ERP completo e moderno com dashboard de indicadores financeiros, **Agente IA de gestão em 6 áreas** e academia integrada, pronto para uso empresarial.
 
 ![Versão](https://img.shields.io/badge/versão-2.0.0-blue)
 ![Node](https://img.shields.io/badge/Node.js-18+-green)
@@ -14,6 +14,21 @@ Sistema ERP completo e moderno com dashboard de indicadores financeiros, pronto 
 - KPIs: Ticket médio, Margem de lucro, Fluxo de caixa
 - Alertas de estoque baixo e contas vencidas
 - Gráfico de despesas por categoria
+
+### 🤖 Agente IA de Gestão (6 áreas)
+Consultor de gestão embutido no ERP, disponível no menu **Inteligência → Agente IA** e em uma faixa no Dashboard:
+
+- **6 especialistas em um só agente:** 🏢 Gestão Empresarial, 🏭 Produção e Processos, 🤝 Comercial e Vendas, 📣 Marketing, 💰 Financeiro e 📦 Estoque e Expedição
+- **Índice de saúde do negócio (0-100)** e nota por área, com os componentes e pesos expostos
+- **Leitura em linguagem natural** dos dados reais: DRE com CMV, ponto de equilíbrio, giro e cobertura de estoque, curva ABC, CAC/LTV, DSO/DPO, ciclo financeiro, gargalos e capacidade
+- **Alertas priorizados** (crítica, alta, média, baixa) com impacto estimado em reais e atalho para o módulo onde resolver
+- **Plano de ação 7/30/90 dias** com passo a passo, esforço e resultado esperado
+- **Chat** com intenção, área e entidades reconhecidas em português + histórico de conversas por usuário
+- **Base de conhecimento** com conceitos, fórmulas, faixas de referência de mercado, playbooks e check-ups
+- **Relatório executivo em Markdown** exportável (completo ou por área)
+- **Funciona offline**: motor de regras local; opcionalmente conecta OpenAI, Anthropic, Gemini ou Ollama para enriquecer a redação (os números continuam locais)
+
+📘 Documentação completa: [AGENTE_IA.md](AGENTE_IA.md)
 
 ### 💰 Módulos Financeiros
 - **Contas a Receber** - Gerenciamento de recebíveis
@@ -59,11 +74,45 @@ cd gestao-financeira
 # Instalar dependências
 npm install
 
+# Popular a base de demonstração (recomendado para ver o Agente IA em ação)
+npm run seed
+
 # Iniciar servidor
 npm start
 ```
 
 Acesse: http://localhost:3000
+
+Outros comandos úteis:
+
+```bash
+npm test                                              # 46 testes automatizados
+npm run agent:demo                                    # diagnóstico do agente no terminal
+npm run agent:demo -- "quais produtos estão em ruptura?"   # pergunta direta ao agente
+npm run agent:demo -- --report                        # relatório executivo em Markdown
+npm run course:doc                                    # regenera o CURSO.md
+```
+
+### Conectar um modelo de linguagem ao Agente IA (opcional)
+
+O agente funciona sem nenhuma chave. Para enriquecer a redação com um LLM:
+
+```bash
+export OPENAI_API_KEY=sk-...          # ou ANTHROPIC_API_KEY / GEMINI_API_KEY
+export AGENT_LLM_PROVIDER=auto        # auto | openai | anthropic | gemini | ollama | none
+npm start
+```
+
+Para rodar 100% local com [Ollama](https://ollama.com):
+
+```bash
+export AGENT_LLM_PROVIDER=ollama
+export OLLAMA_BASE_URL=http://localhost:11434
+export OLLAMA_MODEL=llama3.1
+```
+
+Se a chamada ao provedor falhar, o agente responde com o motor local e avisa na tela. As chaves
+nunca são expostas ao navegador.
 
 ## 📦 Tecnologias
 
@@ -84,30 +133,47 @@ gestao-financeira/
 ├── src/
 │   ├── middleware/
 │   │   └── auth.js        # Autenticação JWT
-│   └── routes/
-│       ├── auth.js         # Login/Registro
-│       ├── dashboard.js    # KPIs e gráficos
-│       ├── customers.js    # Clientes
-│       ├── products.js     # Produtos/Estoque
-│       ├── sales.js        # Vendas
-│       ├── purchases.js    # Compras
-│       ├── suppliers.js    # Fornecedores
-│       ├── expenses.js     # Despesas
-│       ├── financial.js    # Financeiro (AR/AP/DRE)
-│       ├── subscriptions.js # Assinaturas
-│       └── course.js        # API do curso (ementa, quiz, progresso, certificado)
-│   └── course/
-│       ├── curriculum.js    # Montagem do currículo e correção dos quizzes
-│       └── modules/         # Conteúdo das 58 aulas (fonte única de verdade)
+│   ├── routes/
+│   │   ├── auth.js          # Login/Registro
+│   │   ├── dashboard.js     # KPIs e gráficos
+│   │   ├── customers.js     # Clientes
+│   │   ├── products.js      # Produtos/Estoque
+│   │   ├── sales.js         # Vendas
+│   │   ├── purchases.js     # Compras
+│   │   ├── suppliers.js     # Fornecedores
+│   │   ├── expenses.js      # Despesas
+│   │   ├── financial.js     # Financeiro (AR/AP/DRE)
+│   │   ├── subscriptions.js # Assinaturas
+│   │   ├── course.js        # API do curso (ementa, quiz, progresso, certificado)
+│   │   └── agent.js         # API do Agente IA (/api/agent)
+│   ├── course/
+│   │   ├── curriculum.js    # Montagem do currículo e correção dos quizzes
+│   │   └── modules/         # Conteúdo das 58 aulas (fonte única de verdade)
+│   └── agent/               # 🤖 Agente IA de gestão
+│       ├── index.js         # Orquestrador (chat, diagnóstico, relatórios)
+│       ├── domains.js       # As 6 áreas e o vocabulário de cada uma
+│       ├── metrics.js       # Camada de dados (SQL -> retrato do negócio)
+│       ├── engine.js        # Motor de regras: notas, alertas e recomendações
+│       ├── knowledge.js     # Conceitos, fórmulas, playbooks e check-ups
+│       ├── nlu.js           # Intenção, domínio e entidades em português
+│       ├── compose.js       # Redação das respostas e contexto para o LLM
+│       ├── prompts.js       # Prompts de sistema por área
+│       ├── llm.js           # Adaptador OpenAI / Anthropic / Gemini / Ollama
+│       ├── report.js        # Relatório executivo em Markdown
+│       └── store.js         # Histórico de conversas
 ├── public/
 │   ├── index.html          # SPA principal
 │   ├── css/style.css       # Estilos modernos
+│   ├── css/agent.css       # Estilos do Agente IA
 │   ├── js/app.js           # Lógica frontend
-│   └── js/course.js        # Frontend do módulo Curso
+│   ├── js/course.js        # Frontend do módulo Curso
+│   └── js/agent.js         # Frontend do Agente IA (abas, chat, gráficos)
 ├── scripts/
-│   └── generate-curso-md.js # Gera o CURSO.md a partir do currículo
+│   ├── generate-curso-md.js # Gera o CURSO.md a partir do currículo
+│   └── agent-demo.js        # Demonstração do agente no terminal
 ├── test/                   # Testes automatizados (npm test)
 ├── CURSO.md                # Versão impressa do curso
+├── AGENTE_IA.md            # Documentação completa do Agente IA
 ├── BUSINESS_PLAN.md        # Plano de Negócios
 └── README.md               # Este arquivo
 ```
@@ -141,6 +207,18 @@ gestao-financeira/
 - `GET /api/subscriptions/my` - Minha assinatura
 - `POST /api/subscriptions` - Criar assinatura
 
+### Agente IA
+- `GET /api/agent/config` - Motor e provedor LLM (não expõe chaves)
+- `GET /api/agent/domains` - As 6 áreas com nota de saúde
+- `GET /api/agent/diagnostic` - Diagnóstico completo (alertas, recomendações, plano)
+- `GET /api/agent/domains/:id` - Aprofundamento de uma área
+- `GET /api/agent/alerts?domain=&severity=` - Alertas filtrados
+- `GET /api/agent/plan` - Plano de ação 7/30/90 dias
+- `GET /api/agent/report?download=1` - Relatório executivo em Markdown
+- `GET /api/agent/knowledge[/:domain]` - Base de conhecimento
+- `POST /api/agent/chat` - Conversa com o agente
+- `GET|DELETE /api/agent/conversations[/:id]` - Histórico de conversas
+
 ### Curso (Academia ERP)
 - `GET /api/course` - Ementa completa + progresso do usuário
 - `GET /api/course/lesson/:id` - Conteúdo e quiz de uma aula (sem gabarito)
@@ -155,6 +233,39 @@ gestao-financeira/
 | Starter | R$ 49,90/mês | Microempreendedores |
 | Professional | R$ 149,90/mês | Pequenas empresas |
 | Enterprise | R$ 349,90/mês | Médias e grandes empresas |
+
+## 🤖 Agente IA integrado
+
+O agente lê os dados reais da empresa e devolve diagnóstico, alertas com impacto em reais e plano de
+ação — sem depender de serviço externo. Exemplo de saída do motor:
+
+```text
+Índice de saúde do negócio: 64,6/100 (Bom)
+Receita de R$ 9.779 nos primeiros 9 de 31 dias do mês — projeção de R$ 33.685
+(+34,3% vs. mês anterior) pelo ritmo do mês, com resultado projetado de R$ 2.278.
+
+🏢 Gestão Empresarial              70,6  Bom
+🏭 Gestão de Produção e Processos  52,4  Atenção
+🤝 Gestão Comercial e Vendas       66,3  Bom
+📣 Gestão de Marketing             77,9  Bom
+💰 Gestão Financeira               72,5  Bom
+📦 Gestão de Estoque e Expedição   47,6  Atenção
+
+🔴 [estoque] 1 produto em ruptura — impacto R$ 5.148
+🔴 [financeiro] Recebíveis vencidos — impacto R$ 5.083
+🟠 [estoque] Fila de expedição acumulada — impacto R$ 4.000
+🟠 [empresarial] Receita concentrada em poucos clientes
+
+🔥 7 dias: 1. Atacar o gargalo principal   2. Blitz de reativação da carteira
+           3. Ativar a régua de cobrança   4. Emitir pedido de reposição
+```
+
+O agente entende que **o mês pode estar em andamento**: até o 4º dia projeta pela média dos meses
+fechados e, do 5º dia em diante, pelo ritmo dos dias vividos — assim ele não grita "a receita caiu
+60%" todo começo de mês. O ponto de equilíbrio usa margem de contribuição real (CMV + despesas
+variáveis) e a projeção usa a mesma decomposição, então os números nunca se contradizem.
+
+Veja arquitetura, regras, faixas de referência e API em [AGENTE_IA.md](AGENTE_IA.md).
 
 ## 🎓 Curso integrado (Academia ERP)
 
