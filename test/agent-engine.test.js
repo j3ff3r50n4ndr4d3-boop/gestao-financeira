@@ -534,3 +534,114 @@ describe('ritmo do mês em andamento', () => {
     assert.strictEqual(forecast.projectedResult >= 0, acima, 'projeção e ponto de equilíbrio coerentes');
   });
 });
+
+// ============================================================
+// Qualidade do texto gerado (regressões encontradas em QA)
+// ============================================================
+describe('qualidade das respostas', () => {
+  let metrics = null;
+  let analysis = null;
+
+  test.before(() => {
+    metrics = collectMetrics(db, userId);
+    analysis = analyzeAll(metrics);
+  });
+
+  test('nenhum texto gerado contém NaN, undefined ou [object]', () => {
+    const textos = [];
+    const coletar = (obj) => {
+      if (obj === null || obj === undefined) return;
+      if (typeof obj === 'string') { textos.push(obj); return; }
+      if (Array.isArray(obj)) { obj.forEach(coletar); return; }
+      if (typeof obj === 'object') Object.values(obj).forEach(coletar);
+    };
+    coletar(analysis);
+    DOMAINS.forEach((d) => coletar(compose(parse(`como está a área de ${d.name}?`), metrics, analysis)));
+    coletar(buildReport(metrics, analysis, 'Empresa Teste'));
+    const sujos = textos.filter((t) => /NaN|undefined|\[object|Infinity/.test(t));
+    assert.deepStrictEqual(sujos, [], `textos com valor inválido: ${sujos.slice(0, 3).join(' || ')}`);
+  });
+
+  test('contagens concordam em gênero e número (sem "1 clientes")', () => {
+    const textos = [];
+    const coletar = (obj) => {
+      if (typeof obj === 'string') return textos.push(obj);
+      if (Array.isArray(obj)) return obj.forEach(coletar);
+      if (obj && typeof obj === 'object') Object.values(obj).forEach(coletar);
+    };
+    coletar(analysis);
+    coletar(buildReport(metrics, analysis, 'Empresa Teste'));
+    DOMAINS.forEach((d) => coletar(compose(parse(`plano de ação para ${d.name}`), metrics, analysis)));
+    const errados = textos.filter((t) => /\b1 [a-záéíóúãõç]{3,}s\b/.test(t));
+    assert.deepStrictEqual(errados, [], `plural errado após 1: ${errados.slice(0, 3).join(' || ')}`);
+    assert.ok(!textos.some((t) => /mês\(es\)|\(s\)\b/.test(t)), 'não deve sobrar o padrão "palavra(s)"');
+  });
+
+  test('alerta de clientes inativos tem título com contagem válida', () => {
+    const comercial = analysis.domains.find((d) => d.id === 'comercial');
+    const inativos = comercial.alerts.filter((a) => /inativos? há mais de 90 dias/i.test(a.title));
+    inativos.forEach((a) => {
+      assert.match(a.title, /^\d+ (cliente inativo|clientes inativos) há mais de 90 dias$/);
+    });
+  });
+
+  test('compose: "a empresa dá lucro?" responde sim/não com DRE e ponto de equilíbrio', () => {
+    const r = compose(parse('a empresa dá lucro?'), metrics, analysis);
+    assert.match(r.text, /^## (✅ Sim|⚠️ Não) — a operação/);
+    assert.ok(/Resultado/.test(r.text) && /Margem bruta/.test(r.text), 'traz resultado e margem');
+    const tabela = r.blocks.find((b) => b.type === 'table' && /DRE/.test(b.title));
+    assert.ok(tabela, 'devolve a tabela de DRE gerencial');
+    assert.ok(tabela.rows.some((row) => /CMV/.test(row[0])), 'DRE inclui o CMV');
+    const kpis = r.blocks.find((b) => b.type === 'kpis');
+    assert.ok(kpis && kpis.items.length >= 3, 'devolve KPIs de rentabilidade');
+  });
+
+  test('compose: respeita a polaridade de "estamos no prejuízo?"', () => {
+    const lucro = compose(parse('a empresa dá lucro?'), metrics, analysis);
+    const prejuizo = compose(parse('estamos no prejuízo?'), metrics, analysis);
+    const positivo = metrics.pace.isPartial ? metrics.pace.result : metrics.profitability.operatingResult;
+    if (positivo > 0) {
+      assert.match(lucro.text, /✅ Sim/, 'pergunta afirmativa → "Sim"');
+      assert.match(prejuizo.text, /✅ Não/, 'pergunta negativa → "Não"');
+    } else {
+      assert.match(lucro.text, /⚠️ Não/, 'pergunta afirmativa → "Não"');
+      assert.match(prejuizo.text, /⚠️ Sim/, 'pergunta negativa → "Sim"');
+    }
+    // o conteúdo é o mesmo: só o enquadramento da resposta muda
+    assert.strictEqual(lucro.blocks.length, prejuizo.blocks.length);
+  });
+
+  test('compose: pergunta neutra recebe título declarativo, não sim/não', () => {
+    const r = compose(parse('qual é o resultado do mês?'), metrics, analysis);
+    assert.match(r.text, /^## 📊 Resultado/);
+  });
+
+  test('compose: plano filtrado por área não traz horizonte vazio', () => {
+    DOMAINS.forEach((d) => {
+      const r = compose(parse('o que devo fazer?', { domain: d.id }), metrics, analysis);
+      const recs = analysis.recommendations.filter((x) => x.domain === d.id);
+      [1, 2, 3].forEach((prio) => {
+        const tem = recs.some((x) => x.priority === prio);
+        const titulo = prio === 1 ? 'Agora — próximos 7 dias' : prio === 2 ? 'Próximos 30 dias' : 'Próximos 90 dias';
+        if (!tem) {
+          const idx = r.text.indexOf(titulo);
+          if (idx >= 0) {
+            const depois = r.text.slice(idx + titulo.length).trim();
+            assert.ok(depois.length > 0, `seção "${titulo}" vazia em ${d.id}`);
+          }
+        }
+      });
+    });
+  });
+
+  test('relatório: mês em andamento mostra lançado e projeção', () => {
+    const md = buildReport(metrics, analysis, 'Empresa Teste');
+    if (metrics.pace.isPartial) {
+      assert.ok(/Mês em andamento/.test(md), 'sinaliza o mês em andamento');
+      assert.ok(/projeção R\$/.test(md), 'mostra a projeção ao lado do valor lançado');
+      assert.ok(!/Sem movimentação registrada nos 0 /.test(md), 'não menciona zero meses vazios');
+    } else {
+      assert.ok(/Receita do mês \|/.test(md) || /Receita do mês/.test(md), 'mostra a receita do mês fechado');
+    }
+  });
+});

@@ -31,6 +31,11 @@ function countPhrase(count, singular, plural) {
   return `${num(count)} ${pl(count, singular, plural)}`;
 }
 
+// em português, decimal diferente de 1 vai para o plural: "1,7 meses"
+function monthWord(value) {
+  return Math.abs(Number(value || 0) - 1) < 0.05 ? 'mês' : 'meses';
+}
+
 function signal(value) {
   const n = Number(value || 0);
   return n > 0 ? `+${num(n, 1)}%` : `${num(n, 1)}%`;
@@ -142,6 +147,7 @@ function analyzeEmpresarial(m) {
   );
   if (partial) {
     kpis.push({ label: 'Ritmo projetado do mês', value: brl(revRef), trend: signal(revGrowth), tone: revGrowth >= 0 ? 'positive' : 'negative' });
+    insights.push(`📅 **Mês em andamento** (${pace.daysElapsed} de ${pace.daysInMonth} dias). Já estão lançados ${brl(rev.current)} de receita e ${brl(m.expenses.current)} de despesas; pelo ${pace.basis || 'ritmo do mês'}, o fechamento projeta receita de ${brl(revRef)}, despesas de ${brl(expRef)} e resultado de ${brl(resultRef)}. As leituras a seguir usam essa projeção para comparar com o mês anterior fechado.`);
   }
 
   // 1) Crescimento
@@ -149,10 +155,10 @@ function analyzeEmpresarial(m) {
   if (rev.current > 0) {
     insights.push(
       revGrowth >= 10
-        ? `A receita cresce em ritmo de ${signal(revGrowth)} frente ao mês anterior (${brl(rev.previous)} → ${brl(revRef)}${partial ? ' projetado' : ''}), um ritmo forte de expansão.${paceNote}`
+        ? `A receita cresce em ritmo de ${signal(revGrowth)} frente ao mês anterior (${brl(rev.previous)} → ${brl(revRef)}${partial ? ' projetado' : ''}), um ritmo forte de expansão.`
         : revGrowth >= 0
-          ? `A receita variou ${signal(revGrowth)} no mês (${brl(revRef)}${partial ? ' projetado' : ''}). Crescimento positivo, porém abaixo do ideal de 5% a 10% ao mês.${paceNote}`
-          : `A receita cai em ritmo de ${signal(revGrowth)} no mês (${brl(rev.previous)} → ${brl(revRef)}${partial ? ' projetado' : ''}). Queda de faturamento exige ação comercial imediata.${paceNote}`
+          ? `A receita variou ${signal(revGrowth)} no mês (${brl(revRef)}${partial ? ' projetado' : ''}). Crescimento positivo, porém abaixo do ideal de 5% a 10% ao mês.`
+          : `A receita cai em ritmo de ${signal(revGrowth)} no mês (${brl(rev.previous)} → ${brl(revRef)}${partial ? ' projetado' : ''}). Queda de faturamento exige ação comercial imediata.`
     );
     if (revGrowth < -10) {
       alerts.push(alert('empresarial', 'critica', 'Queda acentuada de receita', `A receita caiu ${percent(Math.abs(revGrowth))} em relação ao mês anterior (${brl(rev.previous)} → ${brl(revRef)}${partial ? ' no ritmo projetado' : ''}).${paceNote}`, { impact: brl(rev.previous - revRef), page: 'sales' }));
@@ -165,11 +171,11 @@ function analyzeEmpresarial(m) {
   scores.push({ name: 'Margem líquida', weight: 2.5, score: marginRef === null ? null : scoreUp(marginRef, -5, 20) });
   if (rev.current > 0) {
     insights.push(
-      `DRE ${partial ? 'no ritmo do mês' : 'completo do mês'}: receita ${brl(revRef)} - CMV ${brl(cogsRef)} = lucro bruto ${brl(grossRef)} (${percent(grossMarginRef)}); menos despesas de ${brl(expRef)} = resultado operacional de ${brl(resultRef)} (margem líquida ${percent(marginRef)}).${paceNote}`
+      `DRE ${partial ? 'projetado para o fechamento do mês' : 'completo do mês'}: receita ${brl(revRef)} - CMV ${brl(cogsRef)} = lucro bruto ${brl(grossRef)} (${percent(grossMarginRef)}); menos despesas de ${brl(expRef)} = resultado operacional de ${brl(resultRef)} (margem líquida ${percent(marginRef)}).`
     );
     if (prof.cogsMonth > 0 && prof.simpleResult !== prof.operatingResult) {
       insights.push(
-        `Atenção à leitura do Dashboard: ele mostra ${brl(prof.simpleResult)} (receita - despesas, sem baixar o custo da mercadoria vendida). O resultado que considera o CMV é ${brl(prof.operatingResult)}. Use o segundo para decidir.`
+        `Atenção à leitura do Dashboard${partial ? ` (acumulado de ${pace.daysElapsed} dias)` : ''}: ele mostra ${brl(prof.simpleResult)} (receita - despesas, sem baixar o custo da mercadoria vendida). O resultado que considera o CMV é ${brl(prof.operatingResult)}. Use o segundo para decidir.`
       );
     }
     if (marginRef !== null && marginRef < 0) {
@@ -232,11 +238,11 @@ function analyzeEmpresarial(m) {
     insights.push(
       monthsOfCash >= 2
         ? `O caixa de ${brl(m.cash.balance)} cobre ${num(monthsOfCash, 1)} meses de despesas fixas — reserva confortável.`
-        : `O caixa de ${brl(m.cash.balance)} cobre apenas ${num(monthsOfCash, 1)} mês(es) de despesas fixas (${brl(m.expenses.fixedAvgMonth)}/mês).`
+        : `O caixa de ${brl(m.cash.balance)} cobre apenas ${num(monthsOfCash, 1)} ${monthWord(monthsOfCash)} de despesas fixas (${brl(m.expenses.fixedAvgMonth)}/mês).`
     );
     if (monthsOfCash < 1) {
       alerts.push(alert('empresarial', monthsOfCash < 0.3 ? 'critica' : 'alta', 'Reserva de caixa insuficiente',
-        `O saldo atual cobre ${num(monthsOfCash, 1)} mês(es) de despesas fixas. A referência mínima é de 2 a 3 meses (${brl(m.expenses.fixedAvgMonth * 2)}).`,
+        `O saldo atual cobre ${num(monthsOfCash, 1)} ${monthWord(monthsOfCash)} de despesas fixas. A referência mínima é de 2 a 3 meses (${brl(m.expenses.fixedAvgMonth * 2)}).`,
         { impact: brl(Math.max(0, m.expenses.fixedAvgMonth * 2 - m.cash.balance)), page: 'cashflow' }));
       recs.push(recommendation('financeiro', 1, 'Construir reserva de caixa', `Sem reserva, qualquer imprevisto vira empréstimo caro ou atraso de fornecedor.`, [
         'Projete o caixa dos próximos 90 dias e marque as semanas negativas.',
@@ -452,10 +458,10 @@ function analyzeComercial(m) {
     insights.push(`Da carteira de ${countPhrase(c.total, 'cliente', 'clientes')}, ${num(c.active)} ${pl(c.active, 'comprou', 'compraram')} nos últimos 90 dias (${percent(activePct)}), ${num(c.inactive)} ${pl(c.inactive, 'está inativo', 'estão inativos')} e ${num(c.neverBought)} nunca ${pl(c.neverBought, 'comprou', 'compraram')}.`);
     if (c.inactive > 0) {
       const lostRevenue = round(c.inactiveList.reduce((a, x) => a + x.revenue, 0));
-      alerts.push(alert('comercial', c.inactive >= 3 ? 'alta' : 'media', `${countPhrase(countPhrase(c.inactive, 'cliente', 'clientes'), 'inativo', 'inativos')} há mais de 90 dias`,
+      alerts.push(alert('comercial', c.inactive >= 3 ? 'alta' : 'media', `${countPhrase(c.inactive, 'cliente inativo', 'clientes inativos')} há mais de 90 dias`,
         `Esses clientes já geraram ${brl(lostRevenue)} em receita. Reativar custa 5 a 7 vezes menos do que conquistar um novo. Principais: ${c.inactiveList.slice(0, 3).map((x) => `${x.name} (${x.daysSince} dias)`).join(', ')}.`,
         { impact: brl(lostRevenue), page: 'customers' }));
-      recs.push(recommendation('comercial', 1, 'Blitz de reativação da carteira', `${num(c.inactive)} clientes parados representam receita imediata recuperável.`, [
+      recs.push(recommendation('comercial', 1, 'Blitz de reativação da carteira', `${countPhrase(c.inactive, 'cliente parado', 'clientes parados')} ${pl(c.inactive, 'representa', 'representam')} receita imediata recuperável.`, [
         'Ordene os inativos por receita histórica e ligue para os 10 maiores nesta semana.',
         'Ofereça condição específica de retorno (produto que ele costuma comprar + prazo).',
         'Registre o motivo da pausa no cadastro do cliente.',
@@ -463,7 +469,7 @@ function analyzeComercial(m) {
       ], { impact: `Recuperar até ${brl(Math.round(lostRevenue * 0.2))} (20% da base inativa)`, page: 'customers', effort: 'Baixo' }));
     }
     if (c.neverBought > 0) {
-      insights.push(`${countPhrase(num(c.neverBought), 'cliente', 'clientes')} cadastrados nunca compraram — base pronta para prospecção ativa.`);
+      insights.push(`${countPhrase(c.neverBought, 'cliente cadastrado', 'clientes cadastrados')} nunca ${pl(c.neverBought, 'comprou', 'compraram')} — base pronta para prospecção ativa.`);
     }
   }
 
@@ -652,7 +658,7 @@ function analyzeFinanceiro(m) {
   const partial = !!(m.pace && m.pace.isPartial);
   const pace = m.pace || { factor: 1, daysElapsed: 0, daysInMonth: 0 };
   const grow = (a, b) => (b ? Math.round(((a - b) / b) * 1000) / 10 : null);
-  const paceNote = partial ? ` (mês em andamento: ${pace.daysElapsed} de ${pace.daysInMonth} dias — leitura pelo ritmo projetado)` : '';
+  const paceNote = partial ? ` (mês em andamento: ${pace.daysElapsed} de ${pace.daysInMonth} dias — projeção pelo ${pace.basis || 'ritmo do mês'})` : '';
   const revRef = partial ? pace.revenue : m.revenue.current;
   const revGrowth = partial ? pace.growth : m.revenue.growth;
   const expRef = partial ? pace.expenses : exp.current;
@@ -662,6 +668,9 @@ function analyzeFinanceiro(m) {
   const grossMarginRef = revRef > 0 ? Math.round(((revRef - cogsRef) / revRef) * 1000) / 10 : prof.grossMarginPct;
   const resultRef = partial ? pace.result : prof.operatingResult;
   const marginRef = revRef > 0 ? Math.round((resultRef / revRef) * 1000) / 10 : prof.netMarginPct;
+  if (partial) {
+    insights.push(`📅 **Mês em andamento** (${pace.daysElapsed} de ${pace.daysInMonth} dias): receita, despesas e resultado abaixo usam a projeção de fechamento pelo ${pace.basis || 'ritmo do mês'}. Saldos de caixa, contas a receber e a pagar são posicionais de hoje.`);
+  }
 
   const liquidityRatio = safeDiv(cash.balance + f.total, p.total || 1);
   const overduePct = f.overduePct;
@@ -734,7 +743,7 @@ function analyzeFinanceiro(m) {
   scores.push({ name: 'Controle de despesas', weight: 2, score: scoreDown(expShareRef, 90, 35) });
   if (exp.current > 0) {
     const top = exp.currentByCategory.slice(0, 3);
-    insights.push(`Despesas ${partial ? 'no ritmo do mês' : 'do mês'} de ${brl(expRef)} (${percent(expShareRef)} da receita)` + (top.length ? `, concentradas em ${top.map((t) => `${t.category} (${brl(t.total)})`).join(', ')}` : '') + `.${paceNote}`);
+    insights.push(`Despesas ${partial ? 'projetadas para o mês' : 'do mês'} de ${brl(expRef)} (${percent(expShareRef)} da receita)` + (top.length ? `, concentradas em ${top.map((t) => `${t.category} (${brl(t.total)})`).join(', ')}` : '') + '.');
     if (expVariation !== null && expVariation > 15 && expVariation > revGrowth) {
       alerts.push(alert('financeiro', 'alta', 'Despesas crescendo acima da receita', `As despesas sobem ${signal(expVariation)} no mês enquanto a receita varia ${signal(revGrowth)}${partial ? ' (ritmo projetado)' : ''}.${paceNote}`, { impact: brl(expRef - exp.previous), page: 'expenses' }));
     }
@@ -752,7 +761,7 @@ function analyzeFinanceiro(m) {
   // Margem
   scores.push({ name: 'Margem bruta', weight: 2, score: grossMarginRef ? scoreUp(grossMarginRef, 10, 45) : null });
   if (m.revenue.current > 0) {
-    insights.push(`Margem bruta de ${percent(grossMarginRef)} (receita ${brl(revRef)} - CMV ${brl(cogsRef)}), despesas de ${brl(expRef)} e resultado operacional de ${brl(resultRef)} (margem líquida ${percent(marginRef)}).${paceNote}`);
+    insights.push(`Margem bruta de ${percent(grossMarginRef)} (receita ${brl(revRef)} - CMV ${brl(cogsRef)}), despesas de ${brl(expRef)} e resultado operacional de ${brl(resultRef)} (margem líquida ${percent(marginRef)}).`);
     if (grossMarginRef > 0 && grossMarginRef < 25) {
       alerts.push(alert('financeiro', 'media', 'Margem bruta apertada', `${percent(grossMarginRef)} de margem bruta dificilmente cobre despesas fixas de ${brl(exp.fixedAvgMonth)}.`, { page: 'dre' }));
     }
@@ -837,7 +846,7 @@ function analyzeEstoque(m) {
     }
   }
   if (dead.length) {
-    alerts.push(alert('estoque', dead.length >= 3 ? 'media' : 'baixa', `${countPhrase(dead.length, 'produto', 'produtos')} parados há mais de 90 dias`, `Itens sem venda com estoque disponível somando ${brl(deadValue)}: ${dead.slice(0, 4).map((p) => p.name).join(', ')}.`, { impact: brl(deadValue), page: 'products' }));
+    alerts.push(alert('estoque', dead.length >= 3 ? 'media' : 'baixa', `${countPhrase(dead.length, 'produto parado', 'produtos parados')} há mais de 90 dias`, `Itens sem venda com estoque disponível somando ${brl(deadValue)}: ${dead.slice(0, 4).map((p) => p.name).join(', ')}.`, { impact: brl(deadValue), page: 'products' }));
   }
 
   // Recomposição

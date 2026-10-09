@@ -173,20 +173,23 @@ function respondPlano(metrics, analysis, domainId) {
 
   const renderRecs = (list) => list.map((r) => `**${r.title}** — ${getDomain(r.domain)?.shortName || r.domain} (${r.horizon}${r.effort ? `, esforço ${r.effort}` : ''})\n*Por que:* ${r.why}\n${r.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}${r.impact ? `\n🎯 ${r.impact}` : ''}`).join('\n\n');
 
-  const text = recs.length
-    ? [
-        '## Plano de ação priorizado',
-        '',
-        '### 🔥 Agora — próximos 7 dias',
-        plan.now.focus.length ? renderRecs(recs.filter((r) => r.priority === 1)) : '_Nada crítico no momento._',
-        '',
-        '### 📅 Próximos 30 dias',
-        plan.next.focus.length ? renderRecs(recs.filter((r) => r.priority === 2)) : '_Sem ações de médio prazo pendentes._',
-        '',
-        '### 🎯 Próximos 90 dias',
-        plan.later.focus.length ? renderRecs(recs.filter((r) => r.priority === 3)) : '_Sem ações estratégicas pendentes._'
-      ].join('\n')
-    : '✅ Não há recomendações pendentes para esta área com os dados atuais.';
+  // cada horizonte é montado a partir da lista já filtrada: ao recortar por área,
+  // um horizonte sem ações não aparece como seção vazia
+  const horizontes = [
+    { titulo: '### 🔥 Agora — próximos 7 dias', lista: recs.filter((r) => r.priority === 1), vazio: '_Nada crítico no momento._' },
+    { titulo: '### 📅 Próximos 30 dias', lista: recs.filter((r) => r.priority === 2), vazio: '_Sem ações de médio prazo pendentes._' },
+    { titulo: '### 🎯 Próximos 90 dias', lista: recs.filter((r) => r.priority === 3), vazio: '_Sem ações estratégicas pendentes._' }
+  ];
+
+  let text = '✅ Não há recomendações pendentes para esta área com os dados atuais.';
+  if (recs.length) {
+    const partes = ['## Plano de ação priorizado', ''];
+    horizontes.forEach((h) => {
+      if (!h.lista.length && domainId) return;
+      partes.push(h.titulo, h.lista.length ? renderRecs(h.lista) : h.vazio, '');
+    });
+    text = partes.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd();
+  }
 
   return { text, blocks: [{ type: 'recommendations', items: recs }, { type: 'plan', plan }] };
 }
@@ -267,7 +270,7 @@ function respondKpis(metrics, analysis, domainId, parsed) {
         `- **Entradas registradas:** ${brl(c.income)}`,
         `- **Saídas registradas:** ${brl(c.expense)}`,
         `- **Movimento dos últimos 30 dias:** ${brl(c.last30)}`,
-        `- **Cobertura de despesas fixas:** ${metrics.expenses.fixedAvgMonth > 0 ? `${num(safeDiv(c.balance, metrics.expenses.fixedAvgMonth), 1)} mês(es)` : 'n/d'}`
+        `- **Cobertura de despesas fixas:** ${metrics.expenses.fixedAvgMonth > 0 ? (() => { const v = safeDiv(c.balance, metrics.expenses.fixedAvgMonth); return `${num(v, 1)} ${Math.abs(v - 1) < 0.05 ? 'mês' : 'meses'}`; })() : 'n/d'}`
       ].join('\n'),
       blocks: []
     };
@@ -343,9 +346,78 @@ function respondKpis(metrics, analysis, domainId, parsed) {
   };
 }
 
+function respondLucro(metrics, analysis, normalized = '') {
+  // o título respeita o tipo de pergunta: negativa ("estamos no prejuízo?"),
+  // afirmativa ("dá lucro?") ou neutra ("qual é o resultado?")
+  const negativeFraming = /(prejuizo|no vermelho|perdendo dinheiro|negativ|abaixo do ponto)/.test(normalized);
+  const yesNoFraming = negativeFraming || /(da lucro|esta lucrando|tem lucro|e lucrativ|lucrativa|esta no azul|fechou no azul|vai fechar no azul)/.test(normalized);
+  const prof = metrics.profitability || {};
+  const pace = metrics.pace || { isPartial: false };
+  const partial = !!pace.isPartial;
+  const rev = partial ? pace.revenue : metrics.revenue.current;
+  const cogs = partial ? pace.cogs : prof.cogsMonth;
+  const expenses = partial ? pace.expenses : metrics.expenses.current;
+  const result = partial ? pace.result : prof.operatingResult;
+  const margin = rev > 0 ? round((result / rev) * 100, 1) : null;
+  const gross = round(rev - cogs);
+  const grossMargin = rev > 0 ? round((gross / rev) * 100, 1) : null;
+  const profit = result > 0;
+  const base = partial ? `projeção de fechamento (${pace.daysElapsed} de ${pace.daysInMonth} dias, pelo ${pace.basis || 'ritmo do mês'})` : 'mês fechado';
+  const be = prof.breakEvenRevenue;
+  const gap = be ? round(rev - be) : null;
+
+  const serieFechada = metrics.series.filter((x) => !x.partial && x.revenue > 0).slice(-3);
+  const acumulado = serieFechada.reduce((a, x) => a + (x.result || 0), 0);
+
+  const rows = [
+    ['Receita', brl(rev)],
+    ['(−) CMV', brl(cogs)],
+    ['= Lucro bruto', `${brl(gross)} (${percent(grossMargin)})`],
+    ['(−) Despesas', brl(expenses)],
+    ['= Resultado operacional', `${result >= 0 ? brl(result) : `−${brl(Math.abs(result))}`} (${percent(margin)})`]
+  ];
+
+  return {
+    text: [
+      yesNoFraming
+        ? `## ${
+            profit
+              ? (negativeFraming ? '✅ Não — a operação não está no prejuízo' : '✅ Sim — a operação está lucrativa')
+              : (negativeFraming ? '⚠️ Sim — a operação está no prejuízo' : '⚠️ Não — a operação está no prejuízo')
+          }`
+        : `## 📊 Resultado ${partial ? 'projetado' : 'do mês'}: ${result >= 0 ? brl(result) : `−${brl(Math.abs(result))}`} (${profit ? 'lucro' : 'prejuízo'})`,
+      '',
+      `_Base: ${base}._`,
+      '',
+      `- **Resultado ${partial ? 'projetado' : 'do mês'}:** ${result >= 0 ? brl(result) : `−${brl(Math.abs(result))}`} (margem líquida de ${percent(margin)})`,
+      `- **Margem bruta:** ${percent(grossMargin)}`,
+      be ? `- **Ponto de equilíbrio:** ${brl(be)} — ${gap >= 0 ? `fica ${brl(gap)} acima` : `faltam ${brl(Math.abs(gap))} de receita para empatar`}` : '',
+      serieFechada.length ? `- **Acumulado dos últimos ${serieFechada.length} ${serieFechada.length === 1 ? 'mês fechado' : 'meses fechados'}:** ${acumulado >= 0 ? brl(acumulado) : `−${brl(Math.abs(acumulado))}`}` : '',
+      '',
+      profit
+        ? `💡 Para ampliar a margem sem vender mais: reprecificar itens com margem abaixo de 20%, cortar ${brl(round(expenses * 0.05))} em despesas (5%) ou elevar o ticket médio de ${brl2(metrics.revenue.averageTicket)} em 10%.`
+        : `🚨 Para reverter: recuperar ${brl(metrics.receivable.overdueTotal)} em títulos vencidos, cortar ${brl(round(expenses * 0.08))} em despesas (8%)${metrics.products.negativeMargin ? ` e reprecificar ${metrics.products.negativeMargin} ${metrics.products.negativeMargin === 1 ? 'produto com custo acima do preço' : 'produtos com custo acima do preço'}` : ''}.`
+    ].filter((l) => l !== '').join('\n'),
+    blocks: [
+      { type: 'kpis', items: [
+        { label: partial ? 'Resultado projetado' : 'Resultado do mês', value: result >= 0 ? brl(result) : `−${brl(Math.abs(result))}`, tone: profit ? 'positive' : 'negative' },
+        { label: 'Margem líquida', value: percent(margin), tone: margin >= 10 ? 'positive' : margin >= 0 ? 'neutral' : 'negative' },
+        { label: 'Margem bruta', value: percent(grossMargin), tone: grossMargin >= 40 ? 'positive' : 'neutral' },
+        { label: 'Ponto de equilíbrio', value: be ? brl(be) : 'n/d', tone: gap !== null && gap >= 0 ? 'positive' : 'negative' }
+      ] },
+      { type: 'table', title: `DRE gerencial — ${partial ? 'projeção do mês' : metrics.currentMonth}`, columns: ['Linha', 'Valor'], rows }
+    ]
+  };
+}
+
 function respondLista(metrics, analysis, domainId, parsed) {
   const n = parsed.normalized;
   const limit = parsed.entities.limit || 10;
+
+  // "a empresa dá lucro?", "qual é o resultado?", "estamos no prejuízo?"
+  if (/(lucro|lucrativ|prejuizo|rentab|resultado (do|operacional)|margem liquida|da lucro|esta dando)/.test(n)) {
+    return respondLucro(metrics, analysis, n);
+  }
 
   if (/ruptura|zerado|sem estoque|falta de produto/.test(n)) {
     const items = metrics.products.list.filter((p) => p.stockout).sort((a, b) => b.dailyDemand - a.dailyDemand);
@@ -791,7 +863,7 @@ const FACTUAL_PATTERNS = [
   /ticket medio/,
   /giro (de )?estoque/,
   /(ponto de equilibrio|break ?even)/,
-  /(margem|lucratividade)/,
+  /(margem|lucratividade|rentabilidad|rentavel|lucro|prejuizo|resultado (do|operacional)|da lucro|esta dando)/,
   /(quais|o que|lista).{0,25}(ruptura|zerado|sem estoque|reposicao|repor)/,
   /(quais|lista).{0,20}(inativo|parado|sem comprar)/,
   /(fila|pedidos?).{0,15}(expedicao|expedir|pendente)/,

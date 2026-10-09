@@ -28,7 +28,7 @@ function buildReport(metrics, analysis, options = {}) {
   lines.push('');
   lines.push(`**Empresa:** ${company}  `);
   lines.push(`**Gerado em:** ${date}  `);
-  lines.push(`**Período analisado:** ${metrics.seriesKeys.length} meses (${metrics.seriesKeys[0]} a ${metrics.seriesKeys[metrics.seriesKeys.length - 1]})  `);
+  lines.push(`**Período analisado:** ${countPhrase(metrics.seriesKeys.length, 'mês', 'meses')} (${metrics.seriesKeys[0]} a ${metrics.seriesKeys[metrics.seriesKeys.length - 1]})  `);
   lines.push(`**Índice de saúde do negócio:** ${analysis.company.score !== null ? `${num(analysis.company.score, 1)}/100 — ${analysis.company.level.label}` : 'sem dados'}  `);
   lines.push(`**Alertas:** ${countPhrase(analysis.company.criticalAlerts, 'crítico', 'críticos')}, ${countPhrase(analysis.company.highAlerts, 'alto', 'altos')}, ${analysis.company.totalAlerts} no total  `);
   lines.push(`**Recomendações:** ${analysis.company.totalRecommendations}`);
@@ -56,20 +56,35 @@ function buildReport(metrics, analysis, options = {}) {
     ])
   ));
 
+  // mês em andamento: o relatório mostra o lançado e a projeção de fechamento
+  const pace = metrics.pace || { isPartial: false };
+  const partial = !!pace.isPartial;
+  const revRef = partial ? pace.revenue : metrics.revenue.current;
+  const resRef = partial ? pace.result : metrics.profitability.operatingResult;
+  const expRef = partial ? pace.expenses : metrics.expenses.current;
+  const growthRef = partial ? pace.growth : metrics.revenue.growth;
+  const marginRef = revRef > 0 ? Math.round((resRef / revRef) * 1000) / 10 : metrics.profitability.netMarginPct;
+  const expShareRef = revRef > 0 ? Math.round((expRef / revRef) * 1000) / 10 : metrics.expenses.revenueSharePct;
+  const comProjecao = (lancado, projetado) => (partial ? `${brl(lancado)} → projeção ${brl(projetado)}` : brl(lancado));
+
   // Indicadores consolidados
   lines.push('## 3. Indicadores consolidados');
+  if (partial) {
+    lines.push('');
+    lines.push(`> ⏳ **Mês em andamento** (${pace.daysElapsed} de ${pace.daysInMonth} dias). Onde há projeção, ela foi calculada pelo ${pace.basis || 'ritmo do mês'}.`);
+  }
   lines.push('');
   lines.push(table(
     ['Indicador', 'Valor', 'Referência'],
     [
-      ['Receita do mês', brl(metrics.revenue.current), signal(metrics.revenue.growth) + ' vs. mês anterior'],
-      ['Resultado operacional (após CMV e despesas)', brl(metrics.profitability.operatingResult), percent(metrics.profitability.netMarginPct) + ' de margem líquida'],
+      ['Receita do mês' + (partial ? ` (${pace.daysElapsed} dias)` : ''), comProjecao(metrics.revenue.current, revRef), signal(growthRef) + ' vs. mês anterior' + (partial ? ' (projeção)' : '')],
+      ['Resultado operacional (após CMV e despesas)', comProjecao(metrics.profitability.operatingResult, resRef), percent(marginRef) + ' de margem líquida'],
       ['Margem bruta', percent(metrics.profitability.grossMarginPct), '35% a 50% (comércio)'],
       ['Ponto de equilíbrio', metrics.profitability.breakEvenRevenue ? brl(metrics.profitability.breakEvenRevenue) : 'n/d', metrics.profitability.breakEvenGap >= 0 ? 'coberto' : 'não coberto'],
       ['Saldo de caixa', brl(metrics.cash.balance), '2 a 3 meses de despesas fixas'],
-      ['Despesas do mês', brl(metrics.expenses.current), percent(metrics.expenses.revenueSharePct) + ' da receita'],
-      ['Ticket médio', brl2(metrics.revenue.averageTicket), `${countPhrase(num(metrics.revenue.salesCount), 'venda', 'vendas')} no mês`],
-      ['Clientes ativos (90d)', num(metrics.customers.active), `de ${num(metrics.customers.total)} cadastrados`],
+      ['Despesas do mês', comProjecao(metrics.expenses.current, expRef), percent(expShareRef) + ' da receita' + (partial ? ' (projeção)' : '')],
+      ['Ticket médio', brl2(metrics.revenue.averageTicket), `${countPhrase(num(metrics.revenue.salesCount), 'venda', 'vendas')}${partial ? ' até agora' : ' no mês'}`],
+      ['Clientes ativos (90d)', num(metrics.customers.active), `de ${countPhrase(metrics.customers.total, 'cliente cadastrado', 'clientes cadastrados')}`],
       ['Taxa de recompra', percent(metrics.customers.repeatRatePct), 'acima de 30%'],
       ['A receber / vencidos', `${brl(metrics.receivable.total)} / ${brl(metrics.receivable.overdueTotal)}`, 'inadimplência < 5%'],
       ['DSO / DPO', `${metrics.receivable.dso !== null ? num(metrics.receivable.dso) : 'n/d'} / ${metrics.payable.dpo !== null ? num(metrics.payable.dpo) : 'n/d'} dias`, 'DPO ≥ DSO'],
@@ -77,17 +92,33 @@ function buildReport(metrics, analysis, options = {}) {
       ['Estoque (custo)', brl(metrics.products.stockValueCost), `giro ${metrics.products.turnoverAnnualized !== null ? num(metrics.products.turnoverAnnualized, 2) + 'x/ano' : 'n/d'}`],
       ['Rupturas / abaixo do mínimo', `${num(metrics.products.stockouts)} / ${num(metrics.products.belowMin)}`, 'zero em itens classe A'],
       ['Pedidos a expedir', num(metrics.shipping.pendingOrders), 'fila zerada no dia'],
-      ['CAC / LTV', `${metrics.marketing.cac !== null ? brl2(metrics.marketing.cac) : 'n/d'} / ${metrics.marketing.ltv ? brl2(metrics.marketing.ltv) : 'n/d'}`, 'LTV/CAC > 3']
+      ['CAC / LTV', `${metrics.marketing.cac !== null ? brl2(metrics.marketing.cac) : 'n/d'} / ${metrics.marketing.ltv ? brl2(metrics.marketing.ltv) : 'n/d'}`, metrics.marketing.ltvSampleSmall ? `LTV/CAC > 3 (amostra pequena: ${countPhrase(metrics.customers.total, 'cliente', 'clientes')})` : 'LTV/CAC > 3']
     ]
   ));
 
   // Série mensal
   lines.push('## 4. Evolução mensal');
   lines.push('');
+  const primeiroComDado = metrics.series.findIndex((x) => x.revenue > 0 || x.expenses > 0 || x.purchases > 0);
+  const mesesVazios = primeiroComDado > 0 ? primeiroComDado : 0;
+  const serieVisivel = mesesVazios ? metrics.series.slice(mesesVazios) : metrics.series;
   lines.push(table(
     ['Mês', 'Receita', 'Despesas', 'Compras', 'Resultado', 'Vendas'],
-    metrics.series.map((s) => [s.label, brl(s.revenue), brl(s.expenses), brl(s.purchases), brl(s.result), num(s.salesCount)])
+    serieVisivel.map((x) => [
+      x.partial ? `${x.label} \\*` : x.label,
+      x.partial && partial ? `${brl(x.revenue)} → ${brl(pace.revenue)}` : brl(x.revenue),
+      x.partial && partial ? `${brl(x.expenses)} → ${brl(pace.expenses)}` : brl(x.expenses),
+      brl(x.purchases),
+      x.partial && partial ? `${brl(x.result)} → ${brl(pace.result)}` : brl(x.result),
+      num(x.salesCount)
+    ])
   ));
+  if (partial || mesesVazios) {
+    lines.push('');
+    if (partial) lines.push(`\\* Mês em andamento: ${pace.daysElapsed} de ${pace.daysInMonth} dias — projeção pelo ${pace.basis || 'ritmo do mês'}.`);
+    if (mesesVazios) lines.push(`_Sem movimentação registrada nos ${countPhrase(mesesVazios, 'primeiro mês', 'primeiros meses')} do período analisado._`);
+    lines.push('');
+  }
 
   // Detalhe por área
   lines.push('## 5. Análise por área');
